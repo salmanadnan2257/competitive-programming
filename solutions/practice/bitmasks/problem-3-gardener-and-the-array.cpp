@@ -1,0 +1,122 @@
+// --------- Gardener and the Array ---------
+
+// To compile with the LOCAL macro defined, use the following command:
+// g++ -DLOCAL -o program program.cpp
+
+#include <bits/stdc++.h>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <cmath>
+using namespace std;
+
+// Type Aliases
+using ll = long long;
+using vi = vector<int>;
+using vll = vector<long long>;
+using vs = vector<string>;
+using pii = pair<int, int>;
+using pll = pair<long long, long long>;
+
+// Macros
+#define rep(i, a, b) for (int i = a; i < b; ++i)
+#define per(i, a, b) for (int i = a; i >= b; --i)
+#define all(x) (x).begin(), (x).end()
+#define rall(x) (x).rbegin(), (x).rend()
+#define pb push_back
+#define eb emplace_back
+#define mp make_pair
+#define fi first
+#define se second
+#define sz(x) static_cast<int>((x).size())
+#define fast_io ios::sync_with_stdio(false); cin.tie(nullptr);
+
+// Debugging Macro
+#ifdef LOCAL
+    #define debug(x) cerr << #x << " = " << (x) << endl;
+#else
+    #define debug(x)
+#endif
+
+// Constants
+const int MOD = 1e9 + 7;
+const int INF = INT_MAX;
+const ll LINF = LLONG_MAX;
+
+// Utility Functions
+template<typename T>
+void read_vector(vector<T>& v) {
+    for (auto& x : v) cin >> x;
+}
+
+template<typename T>
+void print_vector(const vector<T>& v) {
+    for (const auto& x : v) cout << x << ' ';
+    cout << '\n';
+}
+
+// Priority Queue Types
+template<typename T>
+using max_heap = priority_queue<T>;
+
+template<typename T>
+using min_heap = priority_queue<T, vector<T>, greater<T>>;
+
+int main() {
+    fast_io;
+
+    #ifdef LOCAL
+        // Redirect input from "input.txt" when LOCAL is defined
+        ifstream in("input.txt");
+        if (!in) {
+            cerr << "Error: 'input.txt' not found." << endl;
+            return 1;
+        }
+        cin.rdbuf(in.rdbuf());
+    #endif
+
+    int t = 1;
+    // Uncomment the following line to read the number of test cases
+    cin >> t;
+    bool valid = true;
+    while (t--) {
+        // Your code here
+        int n;
+        cin >> n;
+        unordered_map<int, int> mp;
+        vector<vector<int>> v(n);
+        rep(i, 0, n) {
+            int bits;
+            cin >> bits;
+            while (bits--) {
+                int x;
+                cin >> x;
+                mp[x]++;
+                v[i].push_back(x);
+            }
+        }
+
+        for (auto &bits: v) {
+            valid = true;
+            for (auto &bit: bits) {
+                if (mp[bit] == 1) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (valid) {
+                cout << "YES\n";
+                break;
+            }
+            // cout << valid << "\n";
+        }
+        // cout << valid << "\n";
+        if (not valid) {
+            cout << "NO\n";
+        }
+    }
+
+    return 0;
+}
+

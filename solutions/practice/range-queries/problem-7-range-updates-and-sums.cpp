@@ -1,0 +1,191 @@
+/* ---------------- Competitive Programming Template for ICPC and Other Competitions ---------------- */
+
+#include <bits/stdc++.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <vector>
+#include <string>
+#include <bitset>
+using namespace std;
+
+/* ------------------- FAST I/O ------------------- */
+#define fast_io ios::sync_with_stdio(false);cin.tie(nullptr)
+
+/* ------------------- TYPE ALIASES ------------------- */
+using ll = long long;
+using lld = long double;
+using vll = vector<ll>;
+using vlld = vector<lld>;
+using vb = vector<bool>;
+using vvll = vector<vector<ll>>;
+using vvlld = vector<vector<lld>>;
+using pll = pair<ll, ll>;
+
+/* ------------------- MACROS ------------------- */
+#define rep(i,a,b) for(ll i=(a);i<(b);++i)
+#define per(i,a,b) for(ll i=(a);i>=(b);--i)
+#define all(x) (x).begin(), (x).end()
+#define rall(x) (x).rbegin(), (x).rend()
+#define pb push_back
+#define eb emplace_back
+#define fi first
+#define se second
+#define sz(x) ((ll)(x).size())
+#define nl "\n"
+
+/* ------------------- CONSTANTS ------------------- */
+const ll MOD = 1e9 + 7;
+const ll INF = LLONG_MAX;
+
+
+/* --------------- GCD and LCM --------------- */
+inline ll gcd(ll a,ll b){ return b ? gcd(b,a%b) : a; }
+inline ll lcm(ll a,ll b){ return (a/gcd(a,b))*b; }
+
+/* --------------- FASTER INPUT/OUTPUT --------------- */
+namespace __input {
+    template<class T> void re(T &x){ cin >> x; }
+    void re(lld &x){ string t; cin >> t; x=stold(t); }
+    template<class T1,class T2> void re(pair<T1,T2> &p){ re(p.first,p.second); }
+    template<class T> void re(vector<T> &a){ for(auto &x:a) re(x); }
+    template<class T, size_t SZ> void re(array<T,SZ> &a){ for(auto &x:a) re(x); }
+    template<class Arg,class...Args> void re(Arg &f,Args &...r){ re(f); re(r...); }
+}
+using namespace __input;
+
+namespace __output {
+    template<class T> void pr(const T &x){ cout<<x; }
+    template<class T1,class T2> void pr(const pair<T1,T2> &p){ pr(p.first);pr(" ");pr(p.second); }
+    template<class Arg,class...Args> void pr(const Arg &f,const Args &...r){ pr(f);pr(" ");pr(r...); }
+    template<class T> void pr(const vector<T> &x){ for(const auto &a:x){ pr(a); pr(" "); } }
+    void ps(){ pr("\n"); }
+    template<class Arg> void ps(const Arg &f){ pr(f); ps(); }
+    template<class Arg,class...Args> void ps(const Arg &f,const Args &...r){ pr(f); pr(" "); ps(r...); }
+}
+using namespace __output;
+
+/* --------------- RANDOM HELPER --------------- */
+mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
+inline ll random_in_range(ll l,ll r){
+    uniform_int_distribution<ll> dist(l,r);
+    return dist(rng);
+}
+
+/* --------------- SOLVE --------------- */
+struct SegmentTree {
+    ll n;
+    vll tree, lazy, is_set;
+
+    SegmentTree(ll s) : n(s), tree(4*s, 0), lazy(4*s, 0), is_set(4*s, -1) {}
+
+    inline void apply(ll idx, ll l, ll r, ll val, bool set_op) {
+        if (set_op) {
+            tree[idx] = val * (r - l + 1);
+            is_set[idx] = val;
+            lazy[idx] = 0;
+        } else {
+            tree[idx] += val * (r - l + 1);
+            if (is_set[idx] != -1) {
+                is_set[idx] += val;
+            } else {
+                lazy[idx] += val;
+            }
+        }
+    }
+
+    inline void push(ll idx, ll l, ll r) {
+        if (lazy[idx] || is_set[idx] != -1) {
+            ll m = (l + r) / 2;
+            bool set_op = (is_set[idx] != -1);
+            if (set_op) {
+                apply(idx * 2, l, m, is_set[idx], true);
+                apply(idx * 2 + 1, m + 1, r, is_set[idx], true);
+            } else {
+                apply(idx * 2, l, m, lazy[idx], false);
+                apply(idx * 2 + 1, m + 1, r, lazy[idx], false);
+            }
+            lazy[idx] = 0;
+            is_set[idx] = -1;
+        }
+    }
+
+    void update(ll idx, ll l, ll r, ll ql, ll qr, ll val, bool set_op) {
+        if (ql > r || qr < l) return;
+        if (ql <= l && r <= qr) {
+            apply(idx, l, r, val, set_op);
+            return;
+        }
+        push(idx, l, r);
+        ll m = (l + r) / 2;
+        update(idx * 2, l, m, ql, qr, val, set_op);
+        update(idx * 2 + 1, m + 1, r, ql, qr, val, set_op);
+        tree[idx] = tree[idx * 2] + tree[idx * 2 + 1];
+    }
+
+    ll query(ll idx, ll l, ll r, ll ql, ll qr) {
+        if (ql > r || qr < l) return 0;
+        if (ql <= l && r <= qr) return tree[idx];
+        push(idx, l, r);
+        ll m = (l + r) / 2;
+        return query(idx * 2, l, m, ql, qr) + query(idx * 2 + 1, m + 1, r, ql, qr);
+    }
+};
+
+void solve(){
+    ll N, Q; re(N, Q);
+    SegmentTree seg_tree(N);
+    rep(i, 0, N) {
+        ll x; re(x);
+        seg_tree.update(1, 0, N-1, i, i, x, true);
+    }
+
+    rep(i, 0, Q) {
+        ll type, a, b, c; re(type, a, b); --a, --b;
+        if (type == 1) {
+            re(c);
+            seg_tree.update(1, 0, N-1, a, b, c, false);
+        } else if (type == 2) {
+            re(c);
+            seg_tree.update(1, 0, N-1, a, b, c, true);
+        } else {
+            ps(seg_tree.query(1, 0, N-1, a, b));
+        }
+    }
+}
+
+/* --------------- MAIN --------------- */
+int main(){
+    fast_io;
+
+    #if defined(LOCAL) && LOCAL == SALMAN
+    // Record start time
+    auto start = std::chrono::high_resolution_clock::now();
+    #endif
+
+
+    // // Precomputations Needed for Your Code
+    // precompute_factorials();   // ✅ Required for nCr(n, r)
+    // sieve(MAXN);               // ✅ Required for prime-related functions
+    // compute_totient();         // ✅ Required for φ(n) calculations
+    // compute_mobius();          // ✅ Required for Möbius function calculations
+
+    cout << setprecision(12) << fixed;
+
+    ll T=1;
+    // cin >> T;
+    while(T--) solve();
+
+
+    #if defined(LOCAL) && LOCAL == SALMAN
+    // Record end time
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Calculate duration
+    std::chrono::duration<double> duration = end - start;
+
+    // Output duration in seconds
+    std::cout << "Execution time: " << duration.count() << " seconds" << std::endl;
+    #endif
+
+    return 0;
+}
