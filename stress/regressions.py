@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the solutions that had bugs fixed on 2026-10-27.
+"""Regression tests for the solutions that had bugs fixed on 2026-10-26.
 
 Each fixed solution is run on random small inputs and its answer is checked
 against a brute force written from the problem statement (or, where several

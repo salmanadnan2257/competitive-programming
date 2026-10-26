@@ -79,13 +79,38 @@ printf '3 5\n3 3 2\n1 4 1 3 2\n' | ./sol
 python3 tools/build_all.py          # every solution plus the template must compile
 python3 stress/stress.py            # range-query solutions vs brute force, 500 cases each
 python3 stress/stress.py --cases 1000 --only polynomial-queries
+python3 stress/regressions.py       # every solution fixed after review, against brute force
+python3 stress/regressions.py --sanitize   # the same, built with AddressSanitizer and UBSan
 ```
 
-Both scripts read `CXX` if you want a compiler other than `g++`. The stress seed is fixed, so a failure reproduces exactly, and the failing input is printed.
+All three scripts read `CXX` if you want a compiler other than `g++`. The seeds are fixed, so a failure reproduces exactly, and the failing input is printed.
 
 Verified on 2026-10-26 in a clean `gcc:13` container (g++ 13.5, Python 3.11): all 392 files (my 361 solutions, the 30 in `from-other-sources/`, and the template) compile with `-std=gnu++17 -O2`, and all eight range-query solutions agree with brute force on 1,000 random cases each. To make sure the stress test can actually fail, I broke the minimum query (`min` swapped for `max` in the segment tree merge) and it failed on the first case (checked on 2026-10-25; that solution has not changed since).
 
-What was not verified here: that each solution is accepted by its judge. No verdicts are stored in this repository, and the stress test only covers the eight range-query problems. Everything else is checked for compiling, nothing more.
+The answers themselves are checked for the eight range-query solutions and for every solution fixed after review (next section). Every other solution is checked for compiling and for starting up cleanly.
+
+## Bugs fixed after review
+
+Reading every file again on 2026-10-26 turned up bugs that compiling cannot catch. Each fix below was tested against a brute force written from the problem statement, on random inputs, by `stress/regressions.py`, which also builds the fixed files with sanitizers so any remaining out-of-bounds access fails the run. Running the same tests on the old versions is how the first group was confirmed: those old versions crashed or gave wrong answers.
+
+| Solution | What was wrong |
+|---|---|
+| Consecutive Subsequence (CS Academy) | a value of 0 read `best[-1]` |
+| Carousel | the reset loop ran before `n` was read and wrote one past the end |
+| Sum in the Tree | the root read `sm[-1]` |
+| Static Range Sum Queries | the prefix array was one element short |
+| AND Reconstruction | `b[i] & b[i+1] != a[i]` parsed the wrong way, printed `1` instead of `-1`, and printed no spaces |
+| Shohag Loves XOR (Easy) | the counter was never initialised, `m` was read into an `int`, and the loop ran all the way to `m` (no `y` above `2x` can qualify, so it now stops there) |
+| ...And an Infinite Sequence | the bit test ignored the input; it now checks each bit of the range directly |
+| Sakurako's Field Trip | read `a[-1]` and swapped pairs twice; now only the mirrored pairs are considered |
+| ABC 396 C | sorted ascending but read the largest values from the front |
+| Star Sky | summed rows and columns separately; now 2D prefix sums per starting brightness |
+| ARC 194 A | a greedy that could read an empty stack; replaced by a short DP |
+| IT Restaurants | paired node degrees instead of subset sums of the parts around a vertex, and printed pairs out of order |
+
+Six more were wrong in the code but never changed an answer, and are fixed anyway: a `c4` that should have been `c5` in Waste Sorting, a 25-slot array indexed up to 25 in Yet Another Broken Keyboard, a signed overflow in `(1 << 31) - 1` in Vlad and Division, a leftover cap on flips in Least Prefix Sum, a bounds check done in the wrong order in Math, and a scan that moved the wrong way in Hamiiid, Haaamid... Hamid.
+
+The template had four helpers that were wrong but that no solution calls: the discrete log was off by one and assumed a prime modulus, the Chinese remainder theorem assumed prime moduli, the factorial overflow check relied on signed overflow, and several forward declarations named functions that did not exist. All four are fixed in `template/` and checked by `stress/regressions.py`. The copies of the template pasted into individual solutions still carry the old helpers, unused.
 
 ## Challenges
 
@@ -106,5 +131,5 @@ What was not verified here: that each solution is accepted by its judge. No verd
 
 - **Carry less template.** Every template-based file carries its helpers inline, from about 85 lines in the trimmed version to 629 in the full one, to use a handful of them. That buries the actual solution, and every file also includes `bits/stdc++.h`, so building the whole repository in one container took several minutes. A small header kept in one place, plus a precompiled `bits/stdc++.h`, would fix both.
 - **Pick the simpler structure.** Range Update Queries uses a full lazy segment tree where a Fenwick tree on the difference array is a third of the code. Dynamic Range Minimum Queries has a `build()` that runs in O(n), but `solve()` fills the tree with n point updates in O(n log n) instead and never calls it.
-- **Keep the judge's verdict.** Nothing records whether a file was accepted, so the repository can only prove the code compiles and, for eight problems, agrees with brute force. Saving the verdict and the problem link next to each solution at submission time would have cost nothing.
+- **Write the brute force first.** Every bug in the table above would have been caught by a two-minute brute force and a few hundred random cases, which is exactly how they were caught in the end.
 - **Version control from day one.** The duplicates, backups and placeholders above are what a folder without history fills up with.
