@@ -1,6 +1,6 @@
 # Competitive Programming
 
-398 of my C++ solutions to contest problems from Codeforces, CSES, AtCoder and CS Academy, filed by topic, plus the template every one of them starts from. The data-structure solutions are stress-tested against brute force: a script feeds each one random inputs and checks every answer against a slow, obviously-correct version.
+398 of my C++ solutions to contest problems from Codeforces, CSES, AtCoder and CS Academy, filed by topic, plus the contest template most of them are written in. The data-structure solutions are stress-tested against brute force: a script feeds each one random inputs and checks every answer against a slow, obviously-correct version.
 
 ## Why
 
@@ -31,7 +31,7 @@ solutions/
     labs               7
     problem-sets       8
 template/
-  main-cpp-template.cpp   the template every solution is written inside
+  main-cpp-template.cpp   the last version of my contest template
 stress/
   stress.py          random inputs vs brute force for the range-query solutions
 tools/
@@ -42,7 +42,7 @@ File names follow the problem: `problem-27-ring-road.cpp` is the 27th problem in
 
 ## How a solution is laid out
 
-Most files (269 of the 398) are a copy of the template with one `solve()` filled in under a `SOLVE` banner; the rest are older or shorter files written before the template settled. The template in `template/` is the last version, 639 lines: fast I/O, type aliases (`ll`, `vll`, `pll`), loop macros, variadic `re(...)` and `ps(...)` for reading and printing, and a library of helpers I wanted within reach during a contest, such as `binpowmod` and modular inverse, a sieve, `ncr` over precomputed factorials, CRT, discrete log by baby-step giant-step, matrix power, LCA and topological sort. The blocks guarded by `LOCAL` (timing the run, reading from a local file) only switch on when I compile with my own defines; on a judge `LOCAL` is undefined and none of it runs.
+Most files (269 of the 398) are written inside a version of my template, with one `solve()` filled in under a `SOLVE` banner; the other 129, mostly early number theory, CS 334 and dynamic programming work, are standalone files that don't use it. The template grew over time: a typical file carries about 85 lines of it above the `SOLVE` banner, and the version in `template/` is the last and largest, 639 lines, with fast I/O, type aliases (`ll`, `vll`, `pll`), loop macros, variadic `re(...)` and `ps(...)` for reading and printing, and a library of helpers I wanted within reach during a contest, such as `binpowmod` and modular inverse, a sieve, `ncr` over precomputed factorials, CRT, discrete log by baby-step giant-step, matrix power, LCA and topological sort. The blocks guarded by `LOCAL` (timing the run, reading from a local file) only switch on when I compile with my own defines; on a judge `LOCAL` is undefined and none of it runs.
 
 So when you open a file, scroll to the `SOLVE` banner. Everything above it is shared.
 
@@ -103,7 +103,7 @@ What was not verified here: that each solution is accepted by its judge. No verd
 
 ## What I'd do differently
 
-- **Carry less template.** Every file pastes about 400 lines of helpers to use five of them, which buries the actual solution and slows compiling: building all 398 files in one container took several minutes, nearly all of it parsing `bits/stdc++.h` and the helper library over and over. A small header kept in one place, or a precompiled `bits/stdc++.h`, would fix both.
+- **Carry less template.** Every template-based file carries its helpers inline, usually about 85 lines and up to 629 in the late ones, to use a handful of them. That buries the actual solution, and every file also includes `bits/stdc++.h`, so building all 398 in one container took several minutes. A small header kept in one place, plus a precompiled `bits/stdc++.h`, would fix both.
 - **Pick the simpler structure.** Range Update Queries uses a full lazy segment tree where a Fenwick tree on the difference array is a third of the code. Dynamic Range Minimum Queries has a `build()` that runs in O(n), but `solve()` fills the tree with n point updates in O(n log n) instead and never calls it.
 - **Keep the judge's verdict.** Nothing records whether a file was accepted, so the repository can only prove the code compiles and, for eight problems, agrees with brute force. Saving the verdict and the problem link next to each solution at submission time would have cost nothing.
 - **Version control from day one.** The duplicates, backups and placeholders above are what a folder without history fills up with.
