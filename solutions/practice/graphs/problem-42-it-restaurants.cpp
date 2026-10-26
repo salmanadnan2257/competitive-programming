@@ -628,18 +628,9 @@ inline ll random_in_range(ll l,ll r){
 /* --------------- 16) SOLVE --------------- */
 ll n = 5500;
 vvll adj(n, vll());
-vvll ans;
-map<vll, ll> cnt;
-
-void dfs(ll curr, ll par) {
-    ll st = sz(adj[curr]);
-    ll end = n - st - 1;
-    if (!cnt.count({st, end}) && !cnt.count({end, st}) && st != 0 && end != 0) ans.pb({st, end}), ++cnt[{st, end}];
-    for (ll node: adj[curr]) {
-        if (node == par) continue;
-        dfs(node, curr);
-    }
-}
+vll sub(n, 0), par(n, -1);
+// possible[a]: some vertex can be left empty so that its remaining parts split into a and n-1-a
+bitset<5505> possible;
 
 void solve(){
     re(n);
@@ -647,25 +638,28 @@ void solve(){
         ll u, v; re(u, v); --u; --v;
         adj[u].eb(v), adj[v].eb(u);
     }
-    dfs(0, -1);
-    ll si = sz(ans);
-    
-    ll res = 0;
-    ll diff = 0;
-
-    rep(i, 0, si) {
-        if (ans[i][0] == ans[i][1]) ++diff;
-        else ++res;
+    // BFS order (parents before children), kept iterative because a path of 5000 vertices
+    // is too deep for a recursive DFS that carries a bitset in every frame
+    vll order; order.pb(0);
+    vb seen(n, 0); seen[0] = 1;
+    rep(i, 0, n) {
+        ll u = order[i];
+        for (ll v: adj[u]) if (!seen[v]) seen[v] = 1, par[v] = u, order.pb(v);
     }
-    ps(res*2+diff);
-
-    rep(i, 0, si) {
-        ps(ans[i]);
+    rep(i, 0, n) sub[i] = 1;
+    per(i, n-1, 1) sub[par[order[i]]] += sub[order[i]];
+    rep(u, 0, n) {
+        bitset<5505> reach;   // subset sums of the parts left when u is removed
+        reach[0] = 1;
+        for (ll v: adj[u]) reach |= reach << (v == par[u] ? n - sub[u] : sub[v]);
+        possible |= reach;
     }
-    per(i, si-1, 0) {
-        if (ans[i][0] == ans[i][1]) continue;
-        ps(ans[i][1], ans[i][0]);
+    vector<pll> ans;
+    rep(a, 1, n-1) {
+        if (possible[a]) ans.pb({a, n-1-a});
     }
+    ps(sz(ans));
+    for (auto &p: ans) ps(p.fi, p.se);
 }
 
 /* --------------- 17) MAIN --------------- */

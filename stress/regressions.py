@@ -290,6 +290,46 @@ def v_arc(inp, a, out):
         if ok: best = sum(st) if best is None else max(best, sum(st))
     return int(toks(out)[0]) == best, f'want {best}'
 
+# ---------- 15. IT Restaurants: every (a, b) reaching the maximum, increasing a ----------
+def g_itr():
+    n = rng.randint(3, 8); edges = [(i, rng.randrange(i)) for i in range(1, n)]
+    return f'{n}\n' + ''.join(f'{u + 1} {v + 1}\n' for u, v in edges), (n, edges)
+def v_itr(inp, ctx, out):
+    n, edges = ctx; best = -1; pairs = set()
+    for col in itertools.product((0, 1, 2), repeat=n):
+        a, b = col.count(1), col.count(2)
+        if a == 0 or b == 0 or any({col[u], col[v]} == {1, 2} for u, v in edges): continue
+        if a + b > best: best, pairs = a + b, {(a, b)}
+        elif a + b == best: pairs.add((a, b))
+    want = sorted(pairs); exp = [str(len(want))] + [str(x) for p in want for x in p]
+    return toks(out) == exp, f'want {exp}'
+
+check('it-restaurants', 'practice/graphs/problem-42-it-restaurants.cpp', g_itr, v_itr, 300)
+# ---------- 16. Hamiiid, Haaamid... Hamid: minimax over the whole game ----------
+def g_hamid():
+    n = rng.randint(2, 8); x = rng.randint(1, n)
+    s = ''.join('.' if i == x - 1 else rng.choice('.#') for i in range(n))
+    return f'1\n{n} {x}\n{s}\n', (n, x, s)
+def v_hamid(inp, ctx, out):
+    import functools
+    n, x, s = ctx; INF = 10**9
+    @functools.lru_cache(None)
+    def days(walls, pos, d):   # each day Mani builds a wall, then Hamid runs left or right
+        if d == 0: return INF
+        best = -1
+        for w in [c for c in range(n) if c != pos and not (walls >> c) & 1] or [None]:
+            ww = walls | (1 << w) if w is not None else walls
+            res = INF
+            for step in (-1, 1):
+                c = pos + step
+                while 0 <= c < n and not (ww >> c) & 1: c += step
+                res = min(res, 1 if not 0 <= c < n else 1 + days(ww & ~(1 << c), c, d - 1))
+            best = max(best, res)
+        return best
+    want = days(sum(1 << i for i, ch in enumerate(s) if ch == '#'), x - 1, n + 3)
+    return toks(out) == [str(want)], f'want {want}'
+
+check('hamid', 'contests/codeforces/11-round-1041-div-1-+-div-2/problem-b-hamiiid-haaamid-...- -hamid.cpp', g_hamid, v_hamid, 300)
 check('waste-sorting', 'practice/mixed/problem-65-waste-sorting.cpp', g_waste, v_waste)
 check('carousel', 'practice/graphs/problem-5-carousel.cpp', g_car, v_car, 300)
 check('sum-in-the-tree', 'practice/graphs/problem-36-sum-in-the-tree.cpp', g_tree, v_tree, 300)

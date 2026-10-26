@@ -108,7 +108,7 @@ void solve(){
 
     tmp = ss;
     p1 = X - 2;
-    while (p1 >= 0 && ss[p1] == '#') ++p1;
+    while (p1 >= 0 && ss[p1] == '#') --p1;
     if (p1 != -1) {
         tmp[p1] = '#';
     }
