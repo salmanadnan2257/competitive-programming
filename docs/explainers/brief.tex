@@ -1,0 +1,231 @@
+% explainer-source-hash: 5b7278d47a2048fcac36ba74ec4228a461cec65e1d2739bed1af36d3ec2dc714
+% explainer-source-commit: 31d3e488a7f5bf65c5b085ed40b657da0abc43e5
+% explainer-generated: 2026-10-26
+% Regenerate with /explain-all (see WIRING.md). Do not edit this stamp by hand:
+% it is how the toolchain knows whether this document still matches the code.
+\documentclass[11pt,a4paper]{article}
+\input{preamble}
+
+\title{\vspace{-1.5cm}\textbf{Competitive Programming}\\[0.3cm]
+\large The Brief}
+\author{Explainer for Salman Adnan's portfolio}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{keyidea}{In one paragraph}
+361 C++ solutions Salman wrote while training for programming contests (Codeforces, CSES,
+AtCoder, CS Academy, and the CS~334 course at Habib University), filed by topic. Two Python
+tools make the collection checkable: one compiles every file, the other stress-tests the
+eight data-structure solutions against brute force. Thirty files he studied but did not
+write are kept apart and never counted. No judge verdicts were kept, so correctness is
+only machine-checked for those eight. A glossary is at the end.
+\end{keyidea}
+
+\tableofcontents
+
+%=====================================================================
+\section{The problem the repository solves}
+%=====================================================================
+
+Competitive programming is solving short algorithm puzzles against a clock, with an
+automated judge running your program on hidden inputs. Salman did it full time for about
+eight months, by his own account. The work sat in one untracked folder: duplicates,
+empty placeholders, editor backups, half-finished attempts, and reference code from other
+people mixed in with his own. The repository turns that folder into something a reader
+can browse and a machine can check, and is careful to claim only what it can re-check.
+
+%=====================================================================
+\section{What is in it}
+%=====================================================================
+
+\begin{figure}[H]
+\centering
+\begin{forest}
+  dirtree
+  [competitive-programming/
+    [template/\quad\textrm{\small the full contest template, 639 lines}]
+    [tools/build\_all.py\quad\textrm{\small compile every file}]
+    [stress/stress.py\quad\textrm{\small random inputs against brute force}]
+    [solutions/
+      [practice/\quad\textrm{\small 297, by topic}]
+      [contests/\quad\textrm{\small 41, from 12 live contests}]
+      [course-cs334/\quad\textrm{\small 23, from the university course}]
+      [from-other-sources/\quad\textrm{\small 30, not Salman's, labelled}]]
+  ]
+\end{forest}
+\caption{The repository at a glance (398 tracked files in all).}
+\end{figure}
+
+The practice folders are graphs (65), dynamic programming (36), number theory (48), a
+large mixed set (101), and smaller sets on range queries, bitmasks, prefix sums, two
+pointers, CS Academy and AtCoder. Folder names say what a training set was meant to
+practise, not always what each answer needed: 15 of the graphs files build no graph at
+all, and one of them is a sparse table.
+
+%=====================================================================
+\section{How a solution is written}
+%=====================================================================
+
+A contest program reads from standard input and writes to standard output, nothing else.
+Most of Salman's files (267 of 361) paste a shared \emph{template} at the top, then put the
+answer in a \code{solve()} function under a \code{SOLVE} banner. Reading any file means
+searching for that banner.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=3mm and 6mm]
+  \node[box, minimum width=4.2cm] (full) {full library\\105 files};
+  \node[box, minimum width=4.2cm, right=of full, fill=accent!20] (trim) {trimmed, about 85 lines\\162 files};
+  \node[box, minimum width=4.2cm, right=of trim] (none) {older templates or none\\94 files};
+  \node[lbl, below=1mm of full] {April 2025, first};
+  \node[lbl, below=1mm of trim] {from mid-April 2025 on};
+  \node[lbl, below=1mm of none] {course work, number theory, prefix sums};
+  \draw[flow] (full) -- (trim);
+\end{tikzpicture}
+\caption{Template use across Salman's 361 files. The template shrank over time.}
+\end{figure}
+
+The full template (the copy in \file{template/}) is a library of number theory, a sieve,
+DSU, a lazy segment tree, a Fenwick tree, graph algorithms, matrix power and fast I/O. File
+dates show it came first and was then cut down to a trimmed version keeping only type
+aliases, loop macros, gcd, the \code{re}/\code{ps} I/O helpers and debug macros. Local-only
+code (timing, reading from a file) is behind a \code{LOCAL == SALMAN} preprocessor guard
+that is off on every judge.
+
+%=====================================================================
+\section{The core: range queries}
+%=====================================================================
+
+The eight CSES Range Queries solutions are the technical heart. Each problem has up to
+200{,}000 numbers and 200{,}000 questions, so a loop per question is far too slow; each
+structure answers in $O(\log n)$ or $O(1)$.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}p{4.6cm}p{9.6cm}@{}}
+\toprule
+Problem & Idea \\
+\midrule
+Range Xor, Forest Queries & prefix tables (1D XOR, 2D sums with inclusion-exclusion) \\
+Dynamic Range Sum & Fenwick tree; ``set'' becomes ``add the difference'' \\
+Dynamic Range Minimum & segment tree with point updates \\
+Hotel Queries & max segment tree that walks down to the leftmost fit \\
+Range Update Queries & lazy segment tree, range add \\
+Range Updates and Sums & lazy tree with two tags, add and assign, folded so one is pending \\
+Polynomial Queries & lazy tag that is a line $c + d\,i$, so progressions combine by addition \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=8mm and 3mm]
+  \node[box] (p) {$[0,3]$: sum $+ 4 \cdot 5$\\\textbf{tag +5}};
+  \node[box, below left=of p] (l) {$[0,1]$};
+  \node[box, below right=of p] (r) {$[2,3]$};
+  \draw[flow] (p) -- (l); \draw[flow] (p) -- (r);
+  \node[right=12mm of p, align=left, font=\small] {A covered node updates its own sum and leaves a tag;\\ the tag is pushed to the children only when a later\\ operation needs to look inside. That keeps a range\\ update at $O(\log n)$ instead of $O(n)$.};
+\end{tikzpicture}
+\caption{Lazy propagation, the idea behind three of the eight solutions.}
+\end{figure}
+
+A ninth structure lives outside that folder: a sparse table for static range minimums in
+\file{graphs/problem-59}, with $O(1)$ queries from two overlapping power-of-two blocks.
+
+%=====================================================================
+\section{Verified, not assumed}
+%=====================================================================
+
+\begin{itemize}
+\item \textbf{Build check.} \file{tools/build\_all.py} compiles every file in parallel with
+  the flags a judge uses, \code{-std=gnu++17} and \code{-O2}. On 26 October 2026, in a clean \code{gcc:13}
+  container: 392 of 392 files compile (361 of Salman's, 30 from other sources, the
+  template).
+\item \textbf{Stress test.} \file{stress/stress.py} generates small random inputs (with
+  values up to $10^9$ half the time, to catch overflow), runs the solution and a Python
+  brute force, and compares answers token by token, with a fixed seed so failures
+  reproduce. All eight range-query solutions matched on 1{,}000 cases each.
+\item \textbf{The check can fail.} A deliberately broken minimum query failed on the first
+  case.
+\item \textbf{One-off sweeps during curation} (not scripts in the repository): every file
+  prints an answer, and every file waits for its input instead of crashing at startup (one
+  USACO solution reads a named file instead, as USACO requires). Files that failed these
+  were removed.
+\end{itemize}
+
+%=====================================================================
+\section{Code that is not Salman's}
+%=====================================================================
+
+A file-by-file authorship pass found 30 files that are not his: 20 reference solutions
+headed with Priyansh Agarwal's name (CSES DP, one downloaded folder), and 10 contest
+solutions in other people's templates or styles (galen\_colin's and jiangly's templates,
+someone else's debug header and input paths, editorial-style code, chatbot-style
+comments). Salman edited many of them while learning, so they stay in
+\file{from-other-sources/} with a README naming each one, and are excluded from every
+count. The first published version counted them; it was corrected within a day.
+
+%=====================================================================
+\section{Honest limits}
+%=====================================================================
+
+\begin{honest}{What a reader should know}
+\begin{itemize}
+\item \textbf{No verdicts.} Nothing records whether a judge accepted any file. Beyond the
+  eight stress-tested solutions, the evidence is ``it compiles and starts''.
+\item \textbf{Known bugs.} Reading every file found nine confirmed defects in Salman's own
+  code, five of them out-of-bounds accesses that may or may not have mattered on the judge, plus an
+  operator-precedence slip and an uninitialised counter. The Deep Dive lists each one.
+\item \textbf{Template defects.} The full template has declarations that match no
+  definition, CRT and discrete log that silently assume a prime modulus, and 41~MB of
+  tables allocated on every run (7~MB for the trimmed version).
+\item \textbf{Simpler would do.} Range add with point reads uses a lazy segment tree where
+  a Fenwick tree on the difference array is a third of the code; the two-tag tree uses
+  $-1$ as a sentinel that only works under CSES's limits.
+\item \textbf{Mess left in.} Commented-out earlier attempts, unused helpers, a few files
+  with numbers but no problem names. None of it prints on a judge.
+\end{itemize}
+\end{honest}
+
+\section{The story}
+
+\begin{enumerate}
+\item About eight months of practice from CS~334 onward (Salman's figure; file dates cover
+  April to November 2025, after a bulk copy reset many of them).
+\item 25 October 2026: curated from 480 candidate files into a repository; duplicates,
+  placeholders, backups and non-compiling attempts left out, everything compiled, the
+  range queries stress-tested, an assistant-written ICPC 2026 folder excluded.
+\item 26 October 2026: a second, file-by-file pass corrected the template history, moved
+  30 files by other people into their own folder, and dropped seven non-solutions. The
+  count settled at 361.
+\end{enumerate}
+
+\textbf{If starting over:} keep the verdict and problem link with each file, keep helpers
+in one header, prefer the simplest structure that fits, and use version control from day
+one.
+
+%=====================================================================
+\section{Glossary}
+%=====================================================================
+
+\begin{description}[leftmargin=0pt, itemsep=3pt]
+\item[Brute force] the slow, obviously correct way to compute an answer; the reference a
+  stress test compares against.
+\item[CSES] a fixed set of 300 training problems by topic.
+\item[Fenwick tree] an array of partial sums indexed by binary structure; point add and
+  prefix sum in $O(\log n)$.
+\item[Lazy propagation] deferring a range update by leaving a tag on a covering node.
+\item[$O(\log n)$] grows very slowly with input size: about 18 steps for 200{,}000.
+\item[Segment tree] a binary tree of range summaries; any range is a handful of nodes.
+\item[Sparse table] precomputed minimums of power-of-two blocks; $O(1)$ static queries.
+\item[Stress test] many random small inputs, fast answer against brute force.
+\item[Template] shared helper code pasted at the top of every solution.
+\item[Upsolving] solving a problem after the contest, often from the editorial or others'
+  code.
+\item[Verdict] the judge's result: Accepted, Wrong Answer, Time Limit Exceeded, and so on.
+\end{description}
+
+\end{document}
