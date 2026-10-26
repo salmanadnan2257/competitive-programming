@@ -161,7 +161,7 @@
 using namespace std;
 
 void solve(int n, vector<int> n_arr) {
-    for (int i = 0; i < n; i++) {
+    for (int i = 1; i < n / 2; i++) {
         if (n_arr[i] == n_arr[i-1] || n_arr[n-i-1] == n_arr[n-i]) {
             swap(n_arr[i], n_arr[n-(i+1)]);
         }

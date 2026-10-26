@@ -45,7 +45,6 @@ int main() {
                 max_heap.pop();
                 curr -= 2*top;
                 ans++;
-                if (count >= 10) {break;}
             }
             max_heap.push(a[i]);
         }

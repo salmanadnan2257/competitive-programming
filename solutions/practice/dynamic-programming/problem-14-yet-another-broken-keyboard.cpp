@@ -608,7 +608,7 @@ inline ll random_in_range(ll l,ll r){
 void solve(){
     ll N, K; re(N, K); string ss; re(ss);
     vll arr(N+1, 0);
-    vb typable(25, 0);
+    vb typable(26, 0);
 
     rep(i, 0, K) {
         char c; re(c);

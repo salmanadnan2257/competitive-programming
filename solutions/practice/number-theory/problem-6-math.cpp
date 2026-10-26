@@ -54,7 +54,7 @@ namespace number_theory {
     }
     vector<ll> facs;
     
-    for (ll i = 0; primelist[i] * primelist[i] <= n && i < primelist.size(); i++) {
+    for (ll i = 0; i < primelist.size() && primelist[i] * primelist[i] <= n; i++) {
         if (n % primelist[i] == 0) {
         while (n % primelist[i] == 0) {
             n /= primelist[i];

@@ -90,7 +90,7 @@ void solve(){
     ll ans = 0;
     ll N; re(N);
     rep(i, 0, N) {
-        ll x; re(x); ++x;
+        ll x; re(x); x += 2;
         ans = max(ans, (best[x][0] = best[x-1][0]+1)+1);
         ans = max(ans, best[x][1] = max(best[x-1][1]+1, best[x-2][0]+2));
     }

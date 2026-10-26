@@ -595,7 +595,7 @@ ll ans = 0;
 
 void dfs(ll curr, ll par) {
     ll val_par = 0;
-    if (sm[par] != -1) val_par = sm[par];
+    if (par != -1 && sm[par] != -1) val_par = sm[par];
 
     if (sm[curr] == -1) {
         ll mnm = 2e9+10;

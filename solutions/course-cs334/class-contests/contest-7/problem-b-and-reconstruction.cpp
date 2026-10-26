@@ -23,13 +23,16 @@ int main() {
         bool found = true;
         rep(i, 0, n-1) {
             b[i+1] |= a[i];
-            if (b[i] & b[i+1] != a[i]) {
-                cout << "1\n";
+            if ((b[i] & b[i+1]) != a[i]) {
+                cout << "-1\n";
                 found = false;
                 break;
             }
         }
 
-        if (found) for (auto &x: b) cout << x;
+        if (found) {
+            for (auto &x: b) cout << x << " ";
+            cout << "\n";
+        }
     }
 }

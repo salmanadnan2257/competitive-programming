@@ -15,43 +15,35 @@ using namespace std;
 #define all(a) sort(a.begin(), a.end())
 
 int main() {
-    ll int n, q, c;
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int n, q, c;
     cin >> n >> q >> c;
-    vlli x_sum(102, 0), y_sum(102, 0), x_count(102, 0), y_count(102, 0);
-
+    // cnt[p][x][y]: how many stars with initial brightness p lie in the rectangle (1,1)..(x,y)
+    vector<vector<vi>> cnt(c+1, vector<vi>(102, vi(102, 0)));
     int x, y, s;
     rep(i, 0, n) {
         cin >> x >> y >> s;
-        x_sum[x] += s;
-        y_sum[y] += s;
-        x_count[x] += 1;
-        y_count[y] += 1;
+        cnt[s][x][y] += 1;
     }
-
+    rep(p, 0, c+1) {
+        rep(i, 1, 101) {
+            rep(j, 1, 101) {
+                cnt[p][i][j] += cnt[p][i-1][j] + cnt[p][i][j-1] - cnt[p][i-1][j-1];
+            }
+        }
+    }
     int t, x1, y1, x2, y2;
-    int l_s = 0, l_c = 0, r_s = 0, r_c = 0;
-    int temp = 0, temp_1 = 0;
     rep(i, 0, q) {
         cin >> t >> x1 >> y1 >> x2 >> y2;
-        l_s = x_sum[x2] - x_sum[x1-1];
-        l_c = x_count[x2] - x_count[x1-1];
-        r_s = x_sum[y2] - y_count[y1-1];
-        r_c = x_count[y2] - y_count[y1];
-
-        if (l_c == r_c) {
-            temp = l_s;
-            temp_1 = l_s;
-        } else if (l_c < r_c) {
-            temp = l_s;
-            temp_1 = l_c;
-        } else {
-            temp = r_s;
-            temp_1 = r_c;
+        ll total = 0;
+        rep(p, 0, c+1) {
+            int k = cnt[p][x2][y2] - cnt[p][x1-1][y2] - cnt[p][x2][y1-1] + cnt[p][x1-1][y1-1];
+            // a star that starts at p shines (p + t) mod (c + 1) at time t
+            total += (ll)k * ((p + t) % (c + 1));
         }
-
-        cout << (c - ((temp + (t * temp_1)) % c)) << "\n";
+        cout << total << "\n";
     }
-
     return 0;
 }
 

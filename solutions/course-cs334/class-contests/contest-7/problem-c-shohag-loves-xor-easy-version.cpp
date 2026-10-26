@@ -12,13 +12,15 @@ int main() {
     cin >> _;
     while (_--) {
         // int n = 6;
-        int x, k;
+        long long x, k;
         cin >> x >> k;
         
         // vi ans;
-        int count;
-        rep(i, 1, k+1) {
-            int check = x ^ i;
+        long long count = 0;
+        // for i >= 2x, x ^ i is larger than x and too large to divide i, so stop there
+        long long lim = min(k, 2 * x);
+        for (long long i = 1; i <= lim; i++) {
+            long long check = x ^ i;
             if (x != i && ((x % check == 0) || (i % check == 0))) {
                 // ans.emplace_back(i);
                 count++;

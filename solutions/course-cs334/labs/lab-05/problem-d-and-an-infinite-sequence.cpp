@@ -22,16 +22,16 @@ int main() {
         ll l = max(n-m, (ll)0);
         ll r = n + m;
 
-        ll inc = 0;
         ll ans = 0;
 
         for (ll i=0; i<31; i++) {
-            if (((1 << i) & 1) == 0) {
-                ll check = (l | (1 << i)) - inc;
-                if (check <= r) ans |= (1 << i);
+            ll bit = 1LL << i;
+            if ((l & bit) == 0) {
+                // the smallest value >= l that has bit i set
+                ll check = ((l >> i) | 1) << i;
+                if (check <= r) ans |= bit;
             } else {
-                ans |= (1 << i);
-                inc |= (1 << i);
+                ans |= bit;
             }
         }
 

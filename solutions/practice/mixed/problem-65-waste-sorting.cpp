@@ -127,7 +127,7 @@ void solve(){
         }
 
         if (a3 > 0) {
-            a3 -= c4;
+            a3 -= c5;
             if (a3 < 0) c5 = a3 * -1LL, a3 = 0;
             else c5 = 0;
         }

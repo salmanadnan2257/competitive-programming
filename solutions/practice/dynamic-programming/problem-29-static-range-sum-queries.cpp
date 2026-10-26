@@ -78,7 +78,7 @@ void chsum (ll & a, ll b, ll c) {a = b + c;}
 
 void solve(){
     ll N, Q; re(N, Q); vll arr(N); re(arr);
-    vll prf_sm(N, 0); prf_sm[0] = 0;
+    vll prf_sm(N+1, 0); prf_sm[0] = 0;
     rep(i, 1, N+1) {
         chsum(prf_sm[i], arr[i-1], prf_sm[i-1]);
     }

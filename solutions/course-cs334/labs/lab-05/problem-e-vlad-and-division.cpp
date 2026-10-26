@@ -10,7 +10,7 @@ using namespace std;
 #define eb(x) emplace_back(x)
 #define all(a) sort(a.begin(), a.end())
 
-const int MAX_NUM = (1 << 31) - 1;
+const int MAX_NUM = INT_MAX;  // 2^31 - 1
 
 int main() {
     int _;

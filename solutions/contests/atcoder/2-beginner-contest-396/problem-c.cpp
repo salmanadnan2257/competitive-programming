@@ -474,93 +474,18 @@ inline ll random_in_range(ll l,ll r){
 /* --------------- 17) SOLVE --------------- */
 void solve(){
     ll n, m; re(n, m); vll arr1(n), arr2(m); re(arr1); re(arr2);
-
-    ll mnm = 0;
-    sort(all(arr1));
-    sort(all(arr2));
-
-    if (n > m) {
-        ll diff = n - m;
-        rep(i, 0, diff) {
-            arr2.eb(0);
-        }
-        m = n;
-    } else if (m > n) {
-        ll diff = m - n;
-        rep(i, 0, diff) {
-            arr1.eb(0);
-        }
-        n = m;
-    }
-
-    rep(i, 0, n) {
-        ll tmp = arr1[i];
-        if (tmp < 0) break;
-        ++mnm;
-    }
-
-    ll tp = 0;
-    rep(i, 0, m) {
-        ll tmp = arr2[i];
-        if (tmp < 0) break;
-        ++tp;
-    }
-    mnm = min(mnm, tp);
-
+    // largest first, so a prefix is always the best choice of that many balls
+    sort(rall(arr1));
+    sort(rall(arr2));
+    vll pb(n+1, 0), pw(m+1, 0);
+    rep(i, 0, n) pb[i+1] = pb[i] + arr1[i];
+    rep(i, 0, m) pw[i+1] = pw[i] + arr2[i];
+    // sfx[k]: best black total using at least k black balls
+    vll sfx(n+1, 0);
+    sfx[n] = pb[n];
+    per(i, n-1, 0) sfx[i] = max(sfx[i+1], pb[i]);
     ll sm = 0;
-    rep(i, 0, mnm) {
-        sm += arr1[i] + arr2[i];
-    }
-
-    ll st1 = mnm-1;
-    ll st2 = mnm-1;
-    rep(i, mnm, n) {
-        ll nm = arr1[i];
-        if (nm < 0) {
-            st1 = i;
-            break;
-        }
-        sm += nm;
-    }
-
-    rep(i, mnm, m) {
-        ll nm = arr2[i];
-        if (nm < 0 || i > st1) {
-            st2 = i;
-            break;
-        }
-        sm += nm;
-    }
-
-    if (st2 == st1) {
-    }
-    // ll el = -1;
-    // ll st;
-    // rep(i, mnm, n) {
-    //     ll l = arr1[i];
-    //     ll r = arr2[i];
-
-    //     if ((r+l) >= 0) {
-    //         sm += arr1[i] + arr2[i];
-    //     } else {
-    //         st = i;
-    //         if (l < 0 && r < 0) {
-    //             el = 0;
-    //         } else if (l < 0) {
-    //             el = 1;
-    //         } else {
-    //             el = 2;
-    //         }
-    //     }
-    // }
-    // if (el == 2) {
-    //     rep(i, st, n) {
-    //         ll nm = arr1[i];
-    //         if (nm < 0) break;
-    //         sm += nm;
-    //     }
-    // }
-
+    rep(k, 0, min(n, m)+1) sm = max(sm, pw[k] + sfx[k]);
     ps(sm);
 }
 

@@ -474,88 +474,12 @@ inline ll random_in_range(ll l,ll r){
 /* --------------- 17) SOLVE --------------- */
 void solve(){
     ll n; re(n); vll arr(n); re(arr);
-    if (n == 1) {
-        ps(arr[0]);
-        return;
-    }
-
-    vll prf = {0}, sfx = {0};
-    rep(i, 0, n) {
-        prf.eb(prf[i]+arr[i]);
-    }
-
-    vll fin = {arr[0]};
-    ll si = 1;
-    ll sm = arr[0];
-    ll le = prf[n];
-    rep(i, 1, n) {
-        ll nm = arr[i];
-        if (nm > 0) {
-            if (si > 0 && fin[si-1]+nm < 0) {
-                sm -= fin[si-1];
-                --si;
-                fin.pop_back();
-            } else {
-                fin.eb(nm);
-                sm += nm;
-                ++si;
-            }
-        } else if (nm == 0) {
-            if (si > 0 && fin[si-1] < 0) {
-                sm -= fin[si-1];
-                fin.pop_back();
-                --si;
-            } else {
-                fin.eb(nm);
-                sm += nm;
-                ++si;
-            }
-        } else {
-            ll diff = le - prf[i];
-            // ps("Else: ", fin[si-1]);
-            if (si > 0 && fin[si-1] < 0) {
-                // ps("1. In", sm);
-                sm -= fin[si-1];
-                fin.pop_back();
-                --si;
-                // ps(sm);
-                // ps(fin);
-            } else if (i < n-1 && arr[i+1] < 0) {
-                // ps("2. In", sm);
-                ++si;
-                sm += nm;
-                fin.eb(nm);
-                // ps(sm);
-                // ps(fin);
-            } else if (i < n-1 && diff < 0) {
-                // ps("3. In", sm);
-                fin.eb(nm);
-                ++si;
-                sm += nm;
-                // ps(sm);
-                // ps(fin);
-            } else {
-                if (si > 0 && (fin[si-1]-arr[i] > 0)) {
-                    ++si;
-                    fin.eb(nm);
-                    // ps("4. In", sm);
-                    sm += nm;
-                    // ps(sm);
-                    // ps(fin);
-                } else {
-                    // ps("5. In", sm);
-                    sm -= fin[si-1];
-                    --si;
-                    fin.pop_back();
-                    // ps(sm);
-                    // ps(fin);
-                }
-            }
-        }
-    }
-
-    // ps(fin);
-    ps(sm);
+    // A pop always removes the element pushed just before it, so the dropped
+    // positions form blocks of even length. dp[i]: best stack sum after i steps.
+    vll dp(n+1, 0);
+    dp[1] = arr[0];   // the stack starts empty, so the first step must push
+    rep(i, 2, n+1) dp[i] = max(dp[i-1] + arr[i-1], dp[i-2]);
+    ps(dp[n]);
 }
 
 /* --------------- 18) MAIN --------------- */

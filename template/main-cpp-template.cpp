@@ -38,7 +38,7 @@ const ll MOD = 1e9 + 7;
 const ll INF = LLONG_MAX;
 
 /* Forward Decaration of all the functions */
-inline ll gcd(ll a, ll b); inline ll lcm(ll a, ll b); inline bool is_power_of_two(ll n); inline bool is_bit_set(ll n, ll k); inline ll set_bit(ll n, ll k); inline ll clear_bit(ll n, ll k); inline ll toggle_bit(ll n, ll k); inline ll count_set_bits(ll n); inline ll count_trailing_zeros(ll n); inline ll count_leading_zeros(ll n); inline ll total_bits(ll n); inline ll count_zero_bits(ll n); inline ll lowest_set_bit(ll n); inline ll lowest_set_bit_position(ll n); inline ll xor_from_1_to_n(ll n); inline ll reverse_bits(ll n); inline ll msb_index(ll n); inline ll msb_value(ll n); inline ll binpow(ll a, ll b); inline ll binpowmod(ll a, ll b, ll m); inline lld pow_using_log(lld a, lld n); inline ll mod_inv(ll a, ll m); inline ll ext_gcd(ll a, ll b, ll &x, ll &y); inline ll mod_inv_euclid(ll a, ll m); inline bool is_prime_simple(ll n); inline ll count_divisors(ll n); inline void sieve(ll n); inline vll prime_factors(ll n); inline ll stirling_factorial(ll n); inline ll factorial(ll n); inline ll compute_factorial(ll n); inline void build_lca(const vector<vll> &g, ll root); inline ll get_lca(ll a, ll b); inline vector<vll> mat_mul(const vector<vll> &A, const vector<vll> &B, ll mod); inline vector<vll> mat_pow(vector<vll> base, ll exp, ll mod); inline vll topo_sort(const vector<vll> &g); inline vll bfs(const vector<vll> &g, ll s); inline vll dfs(const vector<vll> &g, ll s); inline void compute_totient(); inline ll crt(vll a, vll m); inline ll mul(ll a, ll b); inline ll add(ll a, ll b); inline ll divide(ll a, ll b); inline void precompute_factorials(); inline ll ncr(ll n, ll r); inline ll ncr_normal(ll n, ll r); inline ll ncr_direct(ll n, ll r, ll mod); inline ll ncr_direct_without_mod(ll n, ll r); inline void compute_mobius(); inline ll discrete_log_bsgs(ll a, ll b, ll m); inline ll random_in_range(ll l, ll r); inline void solve();
+inline ll gcd(ll a, ll b); inline ll lcm(ll a, ll b); inline bool is_power_of_two(ll n); inline bool is_bit_set(ll n, ll k); inline ll set_bit(ll n, ll k); inline ll clear_bit(ll n, ll k); inline ll toggle_bit(ll n, ll k); inline ll count_set_bits(ll n); inline ll count_trailing_zeros(ll n); inline ll count_leading_zeros(ll n); inline ll total_bits(ll n); inline ll count_zero_bits(ll n); inline ll lowest_set_bit(ll n); inline ll lowest_set_bit_position(ll n); inline ll xor_from_1_to_n(ll n); inline ll reverse_bits(ll n); inline ll msb_index(ll n); inline ll msb_value(ll n); inline ll binpow(ll a, ll b); inline ll binpowmod(ll a, ll b, ll m); inline lld pow_using_log(lld a, lld n); inline ll mod_inv(ll a, ll m); inline ll ext_gcd(ll a, ll b, ll &x, ll &y); inline ll mod_inv_euclid(ll a, ll m); inline bool is_prime_simple(ll n); inline ll countDivisors(ll n); inline void sieve(ll n); inline vll prime_factors(ll n); inline ll stirling_factorial(ll n); inline ll factorial(ll n); inline ll compute_factorial(ll n); inline void build_lca(const vector<vll> &g, ll root); inline ll get_lca(ll a, ll b); inline vector<vll> math_mul(const vector<vll> &A, const vector<vll> &B, ll mod); inline vector<vll> math_pow(vector<vll> base, ll exp, ll mod); inline vll topo_sort(const vector<vll> &g); inline vll bfs(const vector<vll> &g, ll s); inline vll dfs(const vector<vll> &g, ll s); inline void compute_totient(); inline ll crt(vll a, vll m); inline ll mul(ll a, ll b); inline ll add(ll a, ll b); inline ll divide(ll a, ll b); inline void precompute_factorials(ll n); inline ll ncr(ll n, ll r); inline ll ncr_normal(ll n, ll r); inline ll ncr_direct(ll n, ll r, ll mod); inline ll ncr_direct_without_mod(ll n, ll r); inline void compute_mobius(); inline ll discrete_log_bsgs(ll a, ll b, ll m); inline ll random_in_range(ll l, ll r); inline void solve();
 
 /* --------------- 1) SHORT HELPER FUNCTIONS --------------- */
 inline ll gcd(ll a,ll b){ return b ? gcd(b,a%b) : a; }
@@ -154,6 +154,7 @@ inline vll prime_factors(ll n){
 
 inline ll stirling_factorial(ll n){
     if(n<2)return 1;
+    if(n>20) return -1; /* 21! does not fit in 64 bits */
     long double nd=(long double)n;
     long double approx=sqrtl(2.0L*M_PI*nd)*powl(nd/M_E,nd);
     return (ll)llroundl(approx);
@@ -161,11 +162,11 @@ inline ll stirling_factorial(ll n){
 inline ll factorial(ll n){
     if(n<0) return 0;
     ll r=1; for(ll i=2;i<=n;i++){
-        r*=i; if(r<0) return -1; /* overflow sign */
+        if(__builtin_mul_overflow(r,i,&r)) return -1; /* overflow */
     }
     return r;
 }
-inline ll compute_factorial(ll n){ return (n<20)? factorial(n) : stirling_factorial(n); }
+inline ll compute_factorial(ll n){ return factorial(n); } /* exact up to 20, -1 beyond */
 
 /* --------------- 5) DSU (DISJOINT SET UNION) --------------- */
 struct DSU {
@@ -240,14 +241,15 @@ inline void compute_totient(){
         }
     }
 }
-/* CRT for pairwise-coprime moduli */
+/* CRT for pairwise-coprime moduli (prime or not); the product of the moduli must fit in 64 bits */
 inline ll crt(vll a,vll m){
     ll prod=1,res=0; ll n=(ll)a.size();
     for(ll x:m) prod*=x;
     rep(i,0,n){
         ll p=prod/m[i];
-        ll inv=mod_inv(p,m[i]); /* or mod_inv_euclid if not prime */
-        res=(res+ a[i]*((inv%prod)* (p%prod) % prod))%prod;
+        ll inv=mod_inv_euclid(p%m[i],m[i]);
+        ll ai=(a[i]%m[i]+m[i])%m[i];
+        res=(ll)((res + (__int128)ai*p%prod*inv)%prod);
     }
     return res;
 }
@@ -355,17 +357,21 @@ struct Fenwick{
 // };
 
 /* --------------- 11) DISCRETE LOG (Baby-step Giant-step) --------------- */
+/* smallest x >= 0 with a^x = b (mod m), or -1; needs gcd(a, m) = 1 */
 inline ll discrete_log_bsgs(ll a,ll b,ll m){
+    if(m==1) return 0;
     a%=m; b%=m; if(b==1)return 0;
     ll n=(ll)ceill(sqrtl((long double)m)), an=1;
     unordered_map<ll,ll> vals;
-    /* store a^(i+1) */
-    rep(i,0,n){ an=(an*a)%m; vals[an]=i+1; }
-    /* base ~ a^(-n) */
-    ll base = binpowmod(a,m-n-1,m);
+    /* store a^(i+1) -> i+1, keeping the smallest exponent */
+    rep(i,0,n){ an=(an*a)%m; if(!vals.count(an)) vals[an]=i+1; }
+    /* base = a^(-n) */
+    ll base = mod_inv_euclid(an,m);
+    if(base<0) return -1;
     ll cur=b;
-    rep(j,0,n){
-        if(vals[cur]) return j*n + (vals[cur]-1);
+    rep(j,0,n+1){
+        auto it=vals.find(cur);
+        if(it!=vals.end()) return j*n + it->second;
         cur=(cur*base)%m;
     }
     return -1;
@@ -612,7 +618,7 @@ int main(){
 
 
     // // Precomputations Needed for Your Code
-    // precompute_factorials();   // ✅ Required for nCr(n, r)
+    // precompute_factorials(MAXN-1);   // ✅ Required for nCr(n, r)
     // sieve(MAXN);               // ✅ Required for prime-related functions
     // compute_totient();         // ✅ Required for φ(n) calculations
     // compute_mobius();          // ✅ Required for Möbius function calculations

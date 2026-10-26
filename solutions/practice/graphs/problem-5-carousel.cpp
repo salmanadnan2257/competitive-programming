@@ -535,9 +535,9 @@ void dfs(ll u) {
 }
 
 void solve(){
+    re(n);
     rep(i, 1, n+1) adj[i].clear(), vis[i]=0, col[i]=-1;
 
-    re(n);
     vll graph(n+1);
     rep(i, 1, n+1) re(graph[i]);
 
