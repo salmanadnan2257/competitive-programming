@@ -1,6 +1,6 @@
 # Competitive Programming
 
-365 of my C++ solutions to contest problems from Codeforces, CSES, AtCoder and CS Academy, filed by topic, plus the contest template most of them are written in. A further 30 files that I studied but did not write sit apart in `solutions/from-other-sources/`, labelled as such. The data-structure solutions are stress-tested against brute force: a script feeds each one random inputs and checks every answer against a slow, obviously-correct version.
+362 of my C++ solutions to contest problems from Codeforces, CSES, AtCoder and CS Academy, filed by topic, plus the contest template most of them are written in. A further 30 files that I studied but did not write sit apart in `solutions/from-other-sources/`, labelled as such. The data-structure solutions are stress-tested against brute force: a script feeds each one random inputs and checks every answer against a slow, obviously-correct version.
 
 ## Why
 
@@ -27,7 +27,7 @@ solutions/
     codeforces        31   (7 rounds, from Div. 4 up to a combined Div. 1 + 2)
     atcoder           11   (5 Beginner and Regular contests)
   course-cs334/      CS 334 at Habib University
-    class-contests    11
+    class-contests     8
     labs               7
     problem-sets       8
   from-other-sources/  30 files I learned from but did not write; its README says where each came from
@@ -43,7 +43,7 @@ File names follow the problem: `problem-27-ring-road.cpp` is the 27th problem in
 
 ## How a solution is laid out
 
-Most of my files (268 of the 365) are written inside a version of my template, with one `solve()` filled in under a `SOLVE` banner; the other 97, mostly early number theory, CS 334 and prefix-sum work, are standalone files that don't use it. The template grew over time: a typical file carries about 85 lines of it above the `SOLVE` banner, and the version in `template/` is the last and largest, 639 lines, with fast I/O, type aliases (`ll`, `vll`, `pll`), loop macros, variadic `re(...)` and `ps(...)` for reading and printing, and a library of helpers I wanted within reach during a contest, such as `binpowmod` and modular inverse, a sieve, `ncr` over precomputed factorials, CRT, discrete log by baby-step giant-step, matrix power, LCA and topological sort. The blocks guarded by `LOCAL` (timing the run, reading from a local file) only switch on when I compile with my own defines; on a judge `LOCAL` is undefined and none of it runs.
+Most of my files (268 of the 362) are written inside a version of my template, with one `solve()` filled in under a `SOLVE` banner. The other 94 don't use it: 19 number theory files use an earlier template of mine (230 to 330 lines, with a `Solve Function` banner), 8 bitmask and two-pointer files use a short one that reads `input.txt` when compiled with `-DLOCAL`, and the remaining 67, mostly CS 334 and prefix-sum work, are plain standalone files. The template comes in two sizes. The full library is the copy in `template/`, 639 lines, last saved in April 2025, with fast I/O, type aliases (`ll`, `vll`, `pll`), loop macros, variadic `re(...)` and `ps(...)` for reading and printing, and a library of helpers I wanted within reach during a contest, such as `binpowmod` and modular inverse, a sieve, `ncr` over precomputed factorials, CRT, discrete log by baby-step giant-step, matrix power, LCA and topological sort. 106 files carry it, in full or as a 300 to 500 line cut of it, mostly the graphs, dynamic programming and number theory sets. The other 162, including all eight range-query files, the mixed practice and most of the contest rounds, carry a trimmed version of about 85 lines that keeps only the type aliases, the loop macros, `gcd` and `lcm`, `re(...)` and `ps(...)`, two debug macros (`debug_pr`, `debug_ps`) and a random helper. The blocks guarded by `LOCAL` (timing the run, reading from a local file) only switch on when I compile with my own defines; on a judge `LOCAL` is undefined and none of it runs.
 
 So when you open a file, scroll to the `SOLVE` banner. Everything above it is shared.
 
@@ -83,7 +83,7 @@ python3 stress/stress.py --cases 1000 --only polynomial-queries
 
 Both scripts read `CXX` if you want a compiler other than `g++`. The stress seed is fixed, so a failure reproduces exactly, and the failing input is printed.
 
-Verified on 2026-10-26 in a clean `gcc:13` container (g++ 13.5, Python 3.11): all 396 files (my 365 solutions, the 30 in `from-other-sources/`, and the template) compile with `-std=gnu++17 -O2`, and all eight range-query solutions agree with brute force on 1,000 random cases each. To make sure the stress test can actually fail, I broke the minimum query (`min` swapped for `max` in the segment tree merge) and it failed on the first case (checked on 2026-10-25; that solution has not changed since).
+Verified on 2026-10-26 in a clean `gcc:13` container (g++ 13.5, Python 3.11): all 393 files (my 362 solutions, the 30 in `from-other-sources/`, and the template) compile with `-std=gnu++17 -O2`, and all eight range-query solutions agree with brute force on 1,000 random cases each. To make sure the stress test can actually fail, I broke the minimum query (`min` swapped for `max` in the segment tree merge) and it failed on the first case (checked on 2026-10-25; that solution has not changed since).
 
 What was not verified here: that each solution is accepted by its judge. No verdicts are stored in this repository, and the stress test only covers the eight range-query problems. Everything else is checked for compiling, nothing more.
 
@@ -93,7 +93,7 @@ What was not verified here: that each solution is accepted by its judge. No verd
 - **Lazy propagation of a progression.** Polynomial Queries adds 1, 2, 3, ... across a range, so the pending update on a node is not a constant. I store it as `c + d*i` in absolute index terms (for a query starting at L, c = 1 - L and d = 1), so two pending progressions on the same node just add coefficient-wise, and a node's sum grows by `c*len + d*(sum of its indices)`.
 - **Finding the first hotel without a binary search.** Hotel Queries needs the leftmost hotel with at least r free rooms, then takes the rooms. Binary searching on prefix maxima costs O(log² n) per group. The solution keeps a max segment tree instead and walks down from the root, going left whenever the left child's maximum is big enough, which finds the hotel in O(log n); a point update then takes the rooms off that hotel.
 - **Point assignment on a Fenwick tree.** A Fenwick tree only knows how to add, but Dynamic Range Sum Queries assigns. The solution keeps a plain copy of the array next to the tree and turns "set k to u" into "add u minus the old value at k".
-- **Making the folder publishable.** The original folder had 480 candidate `.cpp` files. 19 were byte-identical copies sitting in a second topic folder, 17 were empty placeholders, 5 were editor backups, and 3 were unfinished attempts that never compiled (`count-the-arrays`, `subtree-queries` and `cs-academy-subarray-removal`), alongside folders of scratch work. I compiled all of them, kept only the files that build, removed exact duplicates (keeping the copy in the folder where the problem belongs), and left the rest out rather than finish them now and pass that off as the original work. A second pass sorted by authorship: 30 files turned out to be code I had studied rather than written (20 reference solutions headed with Priyansh Agarwal's name, and 10 contest solutions in other people's templates or styles), so they moved to `solutions/from-other-sources/` with a note on each, and three files that were not solutions at all (an empty template, a popcount experiment, an attempt still printing its debug arrays) were dropped.
+- **Making the folder publishable.** The original folder had 480 candidate `.cpp` files. 19 were byte-identical copies sitting in a second topic folder, 17 were empty placeholders, 5 were editor backups, and 3 were unfinished attempts that never compiled (`count-the-arrays`, `subtree-queries` and `cs-academy-subarray-removal`), alongside folders of scratch work. I compiled all of them, kept only the files that build, removed exact duplicates (keeping the copy in the folder where the problem belongs), and left the rest out rather than finish them now and pass that off as the original work. A second pass sorted by authorship: 30 files turned out to be code I had studied rather than written (20 reference solutions headed with Priyansh Agarwal's name, and 10 contest solutions in other people's templates or styles), so they moved to `solutions/from-other-sources/` with a note on each, and six files that were not solutions at all were dropped: an empty template, a popcount experiment, an attempt still printing its debug arrays, and three class-contest files that read their input but never print an answer.
 
 ## What I learned
 
@@ -104,7 +104,7 @@ What was not verified here: that each solution is accepted by its judge. No verd
 
 ## What I'd do differently
 
-- **Carry less template.** Every template-based file carries its helpers inline, usually about 85 lines and up to 629 in the late ones, to use a handful of them. That buries the actual solution, and every file also includes `bits/stdc++.h`, so building the whole repository in one container took several minutes. A small header kept in one place, plus a precompiled `bits/stdc++.h`, would fix both.
+- **Carry less template.** Every template-based file carries its helpers inline, from about 85 lines in the trimmed version to 629 in the full one, to use a handful of them. That buries the actual solution, and every file also includes `bits/stdc++.h`, so building the whole repository in one container took several minutes. A small header kept in one place, plus a precompiled `bits/stdc++.h`, would fix both.
 - **Pick the simpler structure.** Range Update Queries uses a full lazy segment tree where a Fenwick tree on the difference array is a third of the code. Dynamic Range Minimum Queries has a `build()` that runs in O(n), but `solve()` fills the tree with n point updates in O(n log n) instead and never calls it.
 - **Keep the judge's verdict.** Nothing records whether a file was accepted, so the repository can only prove the code compiles and, for eight problems, agrees with brute force. Saving the verdict and the problem link next to each solution at submission time would have cost nothing.
 - **Version control from day one.** The duplicates, backups and placeholders above are what a folder without history fills up with.
