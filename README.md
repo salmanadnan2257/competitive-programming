@@ -32,9 +32,10 @@ solutions/
     problem-sets       8
   from-other-sources/  30 files I learned from but did not write; its README says where each came from
 template/
-  main-cpp-template.cpp   the last version of my contest template
+  main-cpp-template.cpp   the full version of my contest template (later files use a trimmed one)
 stress/
   stress.py          random inputs vs brute force for the range-query solutions
+  regressions.py     brute-force tests for every solution fixed after review, and the template's helpers
 tools/
   build_all.py       compiles every file and reports what fails
 ```
