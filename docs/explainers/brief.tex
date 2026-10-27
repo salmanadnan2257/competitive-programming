@@ -1,5 +1,5 @@
-% explainer-source-hash: 5b7278d47a2048fcac36ba74ec4228a461cec65e1d2739bed1af36d3ec2dc714
-% explainer-source-commit: 31d3e488a7f5bf65c5b085ed40b657da0abc43e5
+% explainer-source-hash: 9dd3ce0b32e422845fe9e2b135b34cc57bfd779871c9cf733fa41b76e82381ae
+% explainer-source-commit: e3ffc8320823dd23f8e8aa60e37847d6ffd108d2
 % explainer-generated: 2026-10-26
 % Regenerate with /explain-all (see WIRING.md). Do not edit this stamp by hand:
 % it is how the toolchain knows whether this document still matches the code.
@@ -17,11 +17,11 @@
 
 \begin{keyidea}{In one paragraph}
 361 C++ solutions Salman wrote while training for programming contests (Codeforces, CSES,
-AtCoder, CS Academy, and the CS~334 course at Habib University), filed by topic. Two Python
-tools make the collection checkable: one compiles every file, the other stress-tests the
-eight data-structure solutions against brute force. Thirty files he studied but did not
-write are kept apart and never counted. No judge verdicts were kept, so correctness is
-only machine-checked for those eight. A glossary is at the end.
+AtCoder, CS Academy, and the CS~334 course at Habib University), filed by topic. Three
+Python tools make the collection checkable: one compiles every file, one stress-tests the
+eight data-structure solutions against brute force, and one tests every solution that was
+fixed after a line-by-line review. Thirty files he studied but did not write are kept
+apart and never counted. A glossary is at the end.
 \end{keyidea}
 
 \tableofcontents
@@ -150,6 +150,10 @@ A ninth structure lives outside that folder: a sparse table for static range min
   reproduce. All eight range-query solutions matched on 1{,}000 cases each.
 \item \textbf{The check can fail.} A deliberately broken minimum query failed on the first
   case.
+\item \textbf{Regression tests.} \file{stress/regressions.py} checks each of the 18 solutions
+  fixed after review against a brute force written from its problem statement (or a checker,
+  or a full game search), built with sanitizers, plus the template's repaired helpers. All
+  pass; the old versions of the 12 real bugs fail the same tests.
 \item \textbf{One-off sweeps during curation} (not scripts in the repository): every file
   prints an answer, and every file waits for its input instead of crashing at startup (one
   USACO solution reads a named file instead, as USACO requires). Files that failed these
@@ -174,14 +178,17 @@ count. The first published version counted them; it was corrected within a day.
 
 \begin{honest}{What a reader should know}
 \begin{itemize}
-\item \textbf{No verdicts.} Nothing records whether a judge accepted any file. Beyond the
-  eight stress-tested solutions, the evidence is ``it compiles and starts''.
-\item \textbf{Known bugs.} Reading every file found nine confirmed defects in Salman's own
-  code, five of them out-of-bounds accesses that may or may not have mattered on the judge, plus an
-  operator-precedence slip and an uninitialised counter. The Deep Dive lists each one.
-\item \textbf{Template defects.} The full template has declarations that match no
-  definition, CRT and discrete log that silently assume a prime modulus, and 41~MB of
-  tables allocated on every run (7~MB for the trimmed version).
+\item \textbf{What the checks cover.} Correct answers are machine-checked for the eight
+  range-query solutions and the 18 fixed ones; for the other 335, the evidence is ``it
+  compiles and starts''.
+\item \textbf{Bugs that were there.} Reading every file found 12 real bugs (out-of-bounds
+  accesses, an operator-precedence slip, an uninitialised counter, a bit test that ignored
+  its input, a wrong sort direction, and three solutions whose algorithm was wrong) and 6 latent ones. All are fixed and tested;
+  the Deep Dive lists each one.
+\item \textbf{Template weight.} The full template's helpers were repaired (a discrete log
+  that was off by one, CRT and discrete log that assumed a prime modulus, declarations that
+  matched nothing), but it still allocates 41~MB of tables on every run (7~MB for the
+  trimmed version).
 \item \textbf{Simpler would do.} Range add with point reads uses a lazy segment tree where
   a Fenwick tree on the difference array is a third of the code; the two-tag tree uses
   $-1$ as a sentinel that only works under CSES's limits.
@@ -201,11 +208,12 @@ count. The first published version counted them; it was corrected within a day.
 \item 26 October 2026: a second, file-by-file pass corrected the template history, moved
   30 files by other people into their own folder, and dropped seven non-solutions. The
   count settled at 361.
+\item Later the same day: every catalogue line was checked against its file, and the bugs
+  that review found were fixed, each with a brute-force test.
 \end{enumerate}
 
-\textbf{If starting over:} keep the verdict and problem link with each file, keep helpers
-in one header, prefer the simplest structure that fits, and use version control from day
-one.
+\textbf{If starting over:} write the brute force first, keep helpers in one header,
+prefer the simplest structure that fits, and use version control from day one.
 
 %=====================================================================
 \section{Glossary}
@@ -225,7 +233,6 @@ one.
 \item[Template] shared helper code pasted at the top of every solution.
 \item[Upsolving] solving a problem after the contest, often from the editorial or others'
   code.
-\item[Verdict] the judge's result: Accepted, Wrong Answer, Time Limit Exceeded, and so on.
 \end{description}
 
 \end{document}

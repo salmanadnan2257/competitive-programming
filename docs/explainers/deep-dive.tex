@@ -1,5 +1,5 @@
-% explainer-source-hash: 5b7278d47a2048fcac36ba74ec4228a461cec65e1d2739bed1af36d3ec2dc714
-% explainer-source-commit: 31d3e488a7f5bf65c5b085ed40b657da0abc43e5
+% explainer-source-hash: 9dd3ce0b32e422845fe9e2b135b34cc57bfd779871c9cf733fa41b76e82381ae
+% explainer-source-commit: e3ffc8320823dd23f8e8aa60e37847d6ffd108d2
 % explainer-generated: 2026-10-26
 % Regenerate with /explain-all (see WIRING.md). Do not edit this stamp by hand:
 % it is how the toolchain knows whether this document still matches the code.
@@ -22,8 +22,8 @@ practises. A further 30 files that he studied but did not write sit apart in the
 labelled folder and are never counted as his. Two small Python tools make the collection
 checkable rather than just browsable: one compiles every file, and one feeds the eight
 data-structure solutions thousands of random inputs and compares every answer with a slow
-version that is obviously right. Nothing here records whether a judge accepted a
-solution, and the document says so wherever it matters.
+version that is obviously right. A third checks every solution that was fixed after a
+line-by-line review against its own brute force.
 \end{keyidea}
 
 \tableofcontents
@@ -43,11 +43,10 @@ read a problem statement, write a program, submit it, and an automated judge dec
 whether it is right. Contests last from about an hour and a half to five hours.
 \end{jargon}
 
-\begin{jargon}{Online judge and verdict}
+\begin{jargon}{Online judge}
 The website that runs your program on hidden test inputs and compares its output with the
-expected output. The result is a \emph{verdict}: Accepted, Wrong Answer, Time Limit
-Exceeded (too slow), Memory Limit Exceeded, or Runtime Error (it crashed). A typical time
-limit is one or two seconds and a typical memory limit is 256 megabytes.
+expected output. The program must also finish within a time limit (typically one or two
+seconds) and a memory limit (typically 256 megabytes).
 \end{jargon}
 
 \begin{jargon}{Codeforces, CSES, AtCoder, CS Academy, USACO}
@@ -307,7 +306,7 @@ nothing (what a judge does) & off \\
 \end{table}
 
 On a judge none of it runs, which is the point: the timing line would otherwise be
-printed into the answer and turn every Accepted into a Wrong Answer.
+printed into the answer and make every answer wrong.
 
 %=====================================================================
 \section{The full template, section by section}
@@ -359,33 +358,34 @@ both in nearly constant time. Graph problems use it to answer ``are these two po
 connected yet?'' while edges are being added.
 \end{jargon}
 
-\begin{honest}{What is wrong with the full template}
-Read line by line, the template has defects that never bit only because the affected
-functions were rarely or never called:
+\begin{honest}{What was wrong with the full template, and what was fixed}
+Read line by line, the template had defects that never bit only because the affected
+functions were never called by any solution. They were fixed on 26 October 2026 in
+\file{template/main-cpp-template.cpp} and are checked by \file{stress/regressions.py}
+(Section~\ref{sec:regress}):
 \begin{itemize}
-\item \textbf{Declarations that match nothing.} Line 41 forward-declares \code{count\_divisors},
-  \code{mat\_mul}, \code{mat\_pow} and a zero-argument \code{precompute\_factorials()}, but
-  the definitions are named \code{countDivisors}, \code{math\_mul}, \code{math\_pow} and take
-  an argument. The commented-out call \code{precompute\_factorials();} in \code{main}
-  would fail to link if uncommented as written.
-\item \textbf{CRT assumes prime moduli.} The comment says ``pairwise-coprime moduli'', but
-  \code{crt} inverts with \code{mod\_inv}, which is Fermat's little theorem and is only
-  correct for a prime modulus. It also multiplies all moduli into one 64-bit product with no
-  overflow guard.
-\item \textbf{Discrete log assumes a prime modulus} for the same reason
-  (\code{binpowmod(a, m-n-1, m)} is a Fermat inverse).
-\item \textbf{Overflow detection by overflow.} \code{factorial} checks \code{r < 0} after
-  multiplying, but signed overflow is undefined behaviour in C++, so the compiler may delete
-  that check. \code{compute\_factorial} switches to Stirling's approximation from 20 upward
-  and casts it to a 64-bit integer, which overflows from 21 on.
-\item \textbf{\code{INF = LLONG\_MAX}}: adding anything to it overflows, so it is only safe
-  as a value that is compared, never summed.
-\item \textbf{Memory paid up front.} Five global tables of a million 64-bit integers
-  (smallest prime factors, totient, both factorial tables, M\"obius) are allocated whether
-  or not they are used. Measured: the full template takes 41~MB of memory just to read one
-  number, against 7~MB for a trimmed-template solution. Under a 256~MB limit that is
-  survivable, but it is a sixth of the budget spent on nothing.
+\item \textbf{Declarations that matched nothing.} Line 41 forward-declared
+  \code{count\_divisors}, \code{mat\_mul}, \code{mat\_pow} and a zero-argument
+  \code{precompute\_factorials()}, but the definitions are \code{countDivisors},
+  \code{math\_mul}, \code{math\_pow} and take an argument. The declarations now match.
+\item \textbf{CRT assumed prime moduli.} It inverted with Fermat's little theorem, which is
+  only correct for a prime modulus. It now uses the extended-Euclid inverse and 128-bit
+  intermediate products, so any pairwise-coprime moduli work.
+\item \textbf{The discrete log was off by one} (for $2^x \equiv 2 \pmod 5$ it returned 0,
+  but $2^0 = 1$), kept the largest exponent for a repeated value instead of the smallest,
+  and also inverted with Fermat. All three are fixed.
+\item \textbf{Overflow detection by overflow.} \code{factorial} checked \code{r < 0} after
+  multiplying, but signed overflow is undefined behaviour in C++. It now uses
+  \code{\_\_builtin\_mul\_overflow} and returns $-1$ past $20!$, and
+  \code{compute\_factorial} no longer casts Stirling's approximation into a 64-bit integer.
+\item \textbf{\code{INF = LLONG\_MAX}} is unchanged: adding anything to it overflows, so it
+  is only safe as a value that is compared, never summed.
+\item \textbf{Memory paid up front} is unchanged too. Five global tables of a million 64-bit
+  integers are allocated whether or not they are used: the full template takes 41~MB just to
+  read one number, against 7~MB for a trimmed-template solution.
 \end{itemize}
+The 105 solutions that paste the full template keep their own copies of the old helpers.
+None of them calls the affected functions, so their behaviour does not depend on it.
 \end{honest}
 
 %=====================================================================
@@ -793,6 +793,33 @@ was deliberately broken (\code{min} swapped for \code{max} in the tree's merge) 
 stress test failed on its first case. The solution has not changed since.
 \end{keyidea}
 
+\subsection{\file{stress/regressions.py}: do the fixes hold?}
+\label{sec:regress}
+
+Every solution fixed after review (Section~\ref{sec:fixes}) has its own test here, built
+the same way as the range-query stress test: a generator for small random inputs in the
+problem's format, and a brute force written from the problem statement. Three twists:
+
+\begin{itemize}
+\item \textbf{Checkers for problems with many right answers.} Carousel and AND
+  Reconstruction accept any valid output, so their tests check the output instead of
+  comparing it: the colouring must be valid and use the minimum number of colours, and the
+  array must reproduce every given AND (or $-1$ must be printed exactly when no array exists,
+  which the brute force decides by trying every small array).
+\item \textbf{Exhaustive search where a formula would be a guess.} Hamiiid, Haaamid... Hamid
+  is a two-player game, so its test plays the whole game by minimax over every board state;
+  IT Restaurants tries every assignment of the two chains to the vertices.
+\item \textbf{Sanitizers.} With \code{--sanitize}, every fixed solution is built with
+  AddressSanitizer and UndefinedBehaviorSanitizer, so an out-of-bounds access or a signed
+  overflow aborts the run instead of passing silently.
+\end{itemize}
+
+The same script compiles a small test program around \file{template/main-cpp-template.cpp}
+and checks its repaired helpers against brute force: the discrete log for every base and
+target under small moduli, CRT for random pairwise-coprime (and often non-prime) moduli,
+the factorials up to and past $20!$, and the renamed declarations. On the old template the
+same 5{,}436 checks produce 2{,}756 failures; on the fixed one, none.
+
 \subsection{The published run}
 
 On 26 October 2026, in a clean \code{gcc:13} Docker container (g++ 13.5, Python 3.11),
@@ -816,6 +843,30 @@ STRESS_EXIT=0
 \end{lstlisting}
 
 392 is Salman's 361 solutions, the 30 files from other sources, and the template.
+The regression tests, in the same container on the same day:
+
+\begin{lstlisting}
+$ docker run --rm -v "$PWD":/r:ro -w /r gcc:13 sh -c \
+    'python3 -B stress/regressions.py --sanitize; echo REGRESSIONS_EXIT=$?'
+ok   it-restaurants: 300 cases
+ok   hamid: 300 cases
+ok   waste-sorting: 400 cases
+ok   carousel: 300 cases
+ok   sum-in-the-tree: 300 cases
+ok   broken-keyboard: 400 cases
+ok   static-range-sums: 400 cases
+ok   and-reconstruction: 300 cases
+ok   shohag-xor: 400 cases
+ok   vlad-division: 400 cases
+ok   infinite-sequence: 400 cases
+ok   sakurako: 400 cases
+ok   abc396-c: 400 cases
+ok   least-prefix-sum: 400 cases
+ok   star-sky: 400 cases
+ok   arc194-a: 400 cases
+ok   template-helpers: 5436 checks, 0 failures
+REGRESSIONS_EXIT=0
+\end{lstlisting}
 
 \subsection{Checks that are not in the repository}
 
@@ -835,11 +886,12 @@ the repository, so they are described here rather than claimed as features:
   setups that were never Salman's. Section~\ref{sec:others} has the result.
 \end{itemize}
 
-\begin{honest}{What none of this proves}
-Nothing here records a judge's verdict. For 353 of the 361 solutions the only machine
-evidence is that they compile and start without crashing; only the eight range-query
-solutions are checked for correct answers. The bugs in Section~\ref{sec:assessment} are
-exactly the kind a compile check cannot see.
+\begin{honest}{What these checks cover}
+Correct answers are machine-checked for the eight range-query solutions and for the 18
+solutions fixed after review (Section~\ref{sec:fixes}). For the other 335, the machine
+evidence is that they compile and start without crashing. The bugs in
+Section~\ref{sec:fixes} are exactly the kind a compile check cannot see, which is why
+they were hunted by reading every file.
 \end{honest}
 
 %=====================================================================
@@ -923,33 +975,64 @@ write all of this?'' deserves a precise answer, and now has one.
 \label{sec:assessment}
 %=====================================================================
 
-\subsection{Bugs confirmed by reading the code}
+\subsection{Bugs found by reading every file, and fixed}
+\label{sec:fixes}
 
-These were found while reading every solve section, and each was confirmed against the
-source line by line. None is caught by the build check. Out-of-bounds access in C++ is
-\emph{undefined behaviour}: it may crash, return garbage, or appear to work, so some of
-these files may well have been accepted. Nothing records whether they were.
+Reading every solve section turned up bugs that a compile check cannot see. All of them
+were fixed on 26 October 2026, and each fix is tested by \file{stress/regressions.py}
+against a brute force written from the problem statement (Section~\ref{sec:regress}).
+Running the same tests on the old versions is how the first group was confirmed: every one
+of those old versions crashed under AddressSanitizer or printed a wrong answer.
 
+\textbf{Real bugs (the old code failed its test):}
 \begin{itemize}
-\item \file{mixed/problem-65-waste-sorting.cpp}\\
-  In the branch for the fifth item type, \code{a3 -= c4} subtracts the fourth type's leftover instead of \code{c5}.
 \item \file{mixed/problem-80-cs-academy-consecutive-subsequence.cpp}\\
-  An input value of 0 becomes $x = 1$, and \code{best[x-2]} reads index $-1$.
+  An input value of 0 read \code{best[-1]}. The index is now offset by two.
 \item \file{graphs/problem-5-carousel.cpp}\\
-  The per-test reset loop runs before \code{n} is read, while \code{n} is still the array size, so it writes one element past the end on the first test.
+  The reset loop ran before \code{n} was read and wrote one element past the end.
 \item \file{graphs/problem-36-sum-in-the-tree.cpp}\\
-  The first call \code{dfs(0, -1)} reads \code{sm[par]} with \code{par} $= -1$.
-\item \file{dynamic-programming/problem-14-yet-another-broken-keyboard.cpp}\\
-  \code{typable} has 25 slots, so the letter z (index 25) is out of bounds.
+  The root read \code{sm[-1]}; the parent value is now only read when there is a parent.
 \item \file{dynamic-programming/problem-29-static-range-sum-queries.cpp}\\
-  The prefix array has $N$ slots but is written and read at index $N$.
+  The prefix array was one element short.
 \item \file{class-contests/contest-7/problem-b-and-reconstruction.cpp}\\
-  \code{b[i] \& b[i+1] != a[i]} parses as \code{b[i] \& (b[i+1] != a[i])}, because \code{!=} binds tighter than \code{\&}.
+  \code{b[i] \& b[i+1] != a[i]} parsed as \code{b[i] \& (b[i+1] != a[i])}; it also printed
+  \code{1} instead of \code{-1} and printed the answer with no spaces.
 \item \file{class-contests/contest-7/problem-c-shohag-loves-xor-easy-version.cpp}\\
-  \code{int count;} is incremented without ever being set to zero.
-\item \file{labs/lab-05/problem-e-vlad-and-division.cpp}\\
-  \code{(1 << 31) - 1} overflows a signed \code{int}; GCC happens to produce the intended $2^{31}-1$.
+  The counter was never initialised, \code{m} was read into an \code{int}, and the loop ran to
+  \code{m}. No $y \ge 2x$ can qualify, so it now stops at $\min(m, 2x)$.
+\item \file{labs/lab-05/problem-d-and-an-infinite-sequence.cpp}\\
+  The bit test \code{((1 << i) \& 1) == 0} ignored the input. The answer is the OR of every
+  value in $[n-m, n+m]$; bit $i$ is set when the smallest value $\ge n-m$ with that bit is
+  at most $n+m$.
+\item \file{labs/lab-04/problem-e-sakurakos-field-trip.cpp}\\
+  The loop read \code{a[-1]} and visited each mirrored pair twice; it now visits each pair
+  once.
+\item \file{contests/atcoder/2-beginner-contest-396/problem-c.cpp}\\
+  Sorted ascending, then read the largest values from the front. Rewritten with descending
+  prefix sums: the best total with $k$ white balls and at least $k$ black ones.
+\item \file{prefix-sums/problem-f-star-sky.cpp}\\
+  Summed rows and columns separately, which cannot answer a rectangle query. Rewritten with
+  2D prefix sums kept per starting brightness.
+\item \file{contests/atcoder/3-regular-contest-194-div-2/problem-a.cpp}\\
+  A hand-made greedy that could read an empty stack. A pop always removes the element pushed
+  just before it, so the dropped steps form even-length blocks and
+  $d_i = \max(d_{i-1} + a_i,\ d_{i-2})$ solves it.
+\item \file{graphs/problem-42-it-restaurants.cpp}\\
+  Paired node degrees, which is not what the problem asks. The achievable pairs are the
+  subset sums of the parts left when one vertex is removed; the fix computes them with a
+  bitset for every vertex, iteratively, since a recursive version with a bitset in every
+  frame overflows the stack on a 5{,}000-vertex path.
 \end{itemize}
+
+\textbf{Latent bugs (wrong in the code, but the old version still passed its test):} a
+\code{c4} that should have been \code{c5} in Waste Sorting (the capacity check before it
+already decides the answer); a 25-slot \code{vector<bool>} indexed at 25 in Yet Another
+Broken Keyboard (it lands inside the same 64-bit word); \code{(1 << 31) - 1} in Vlad and
+Division (signed overflow that GCC happens to fold correctly); a leftover cap of ten flips
+in Least Prefix Sum (provably never reached: one flip always covers the new element); a
+bounds check done after the read in Math; and a scan that stepped the wrong way in
+Hamiiid, Haaamid... Hamid (checked against a full minimax search of the game on 1{,}500
+random boards, before and after). All six are fixed anyway.
 
 \subsection{Weak spots across the collection}
 
@@ -980,15 +1063,17 @@ these files may well have been accepted. Nothing records whether they were.
   difference arrays, Fenwick and segment trees (plain, lazy, descending), a sparse table,
   binary lifting, DSU, SCCs, Euler tours, DP from knapsack to digit and probability DP,
   sieves and modular combinatorics, and interactive problems.
-\item The repository is honest about itself: the README states what was not verified, and
-  the curation history (duplicates, placeholders, non-solutions, other people's code) is
-  written down rather than hidden.
+\item The repository is honest about itself: the README says exactly what is checked and
+  how, and the curation history (duplicates, placeholders, non-solutions, other people's
+  code, bugs found later) is written down rather than hidden.
 \end{itemize}
 
 \subsection{What to do differently, starting over}
 
 \begin{itemize}
-\item Keep the judge's verdict and the problem link beside each file at submission time.
+\item Write a brute force before trusting a fast solution. Every bug in
+  Section~\ref{sec:fixes} would have been caught by a two-minute brute force and a few
+  hundred random cases, which is exactly how they were confirmed in the end.
 \item Keep helpers in one header instead of pasting them, and use a precompiled
   \file{bits/stdc++.h}; the full build of 392 files took several minutes.
 \item Prefer the simpler structure when it suffices (a Fenwick tree on the difference
@@ -1017,6 +1102,9 @@ these files may well have been accepted. Nothing records whether they were.
   solutions at all: an empty template, a popcount experiment, an attempt still printing
   its debug arrays, three class-contest files that never print an answer, and an attempt
   that crashes before reading input (dropped). The count settled at 361.
+\item \textbf{Third pass, later on 26 October 2026.} Every catalogue line in Appendix~\ref{app:catalogue}
+  was checked against its file, and the bugs in Section~\ref{sec:fixes} were fixed, each
+  with its own brute-force test (Section~\ref{sec:regress}).
 \end{enumerate}
 
 %=====================================================================
@@ -1031,10 +1119,12 @@ these files may well have been accepted. Nothing records whether they were.
   $c + d\,i$ tag of Polynomial Queries. Those two are the strongest evidence of
   understanding in the repository.
 \item On Hotel Queries: a segment tree can find \emph{where}, not only \emph{how much}.
-\item On honesty: ``Nothing records a judge verdict, so I only claim what I could re-check.
-  Thirty files I studied but didn't write are kept separate, and the README says so.''
-\item On weaknesses: the template weight, the sentinel in the two-tag tree, and the
-  defects in Section~\ref{sec:assessment}. Owning them is better than being shown them.
+\item On honesty: ``I only claim what I can re-check. Thirty files I studied but didn't
+  write are kept separate, and when a full review found bugs, each fix came with a
+  brute-force test that the old code fails.''
+\item On weaknesses: the template weight, the sentinel in the two-tag tree, and the bugs
+  in Section~\ref{sec:fixes}, which a brute force would have caught at the time. Owning them
+  is better than being shown them.
 \end{itemize}
 
 \appendix
@@ -1064,11 +1154,11 @@ are listed for completeness and are not Salman's work.
 \subsection*{\texttt{practice/dynamic-programming/} (36 files)}
 \addcontentsline{toc}{subsection}{\texttt{practice/dynamic-programming/}}
 \begin{itemize}[nosep,leftmargin=1em]
-\item \file{understand.cpp}: \textbf{(unnamed: understand.cpp)}. Per-digit nine's complement, or subtract from a string of ones.
+\item \file{understand.cpp}: \textbf{(no problem name in the file)}. Per-digit nine's complement, or subtract from a string of ones.
 \item \file{problem-1-boredom.cpp}: \textbf{Boredom}. DP over values: best[i] = max(best[i-1], best[i-2] + i*cnt[i]).
 \item \file{problem-2-consecutive-subsequences.cpp}: \textbf{Consecutive Subsequences}. Map dp[x] = dp[x-1] + 1, then rebuild the indices.
 \item \file{problem-3-red-green-towers.cpp}: \textbf{Red-Green Towers}. Find the max height, then 0/1 subset-count DP over red sums.
-\item \file{problem-4-winter-is-here.cpp}: \textbf{Winter Is Here}. Count multiples, cnt * 2\textasciicircum{}(cnt-1), inclusion-exclusion.
+\item \file{problem-4-winter-is-here.cpp}: \textbf{Winter Is Here}. Count multiples, $c \cdot 2^{c-1}$, inclusion-exclusion.
 \item \file{problem-5-frog-1.cpp}: \textbf{Frog 1}. Linear DP, jumps of 1 or 2.
 \item \file{problem-6-dice-combinations.cpp}: \textbf{Dice Combinations}. Dp[i] = sum of dp[i-1..i-6] mod p.
 \item \file{problem-7-vlad-and-a-sum-of-sum-of-digits.cpp}: \textbf{Vlad and a Sum of Sum of Digits}. Precomputed prefix sums of digit sums.
@@ -1077,7 +1167,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-10-coin-combinations-ii.cpp}: \textbf{Coin Combinations II}. Rolling 1D DP, skip or pick each coin.
 \item \file{problem-11-removing-digits.cpp}: \textbf{Removing Digits}. DP subtracting each nonzero digit.
 \item \file{problem-12-grid-paths.cpp}: \textbf{Grid Paths}. Grid path-count DP avoiding traps.
-\item \file{problem-13-filling-shapes.cpp}: \textbf{Filling Shapes}. Closed form 2\textasciicircum{}(n/2), zero for odd n.
+\item \file{problem-13-filling-shapes.cpp}: \textbf{Filling Shapes}. Closed form $2^{n/2}$, zero for odd n.
 \item \file{problem-13-filling-paths-2.cpp}: \textbf{Filling Paths 2 (as the file is named)}. Dp[i] = 2 dp[i-2], zero for odd n.
 \item \file{problem-14-yet-another-broken-keyboard.cpp}: \textbf{Yet Another Broken Keyboard}. Count typable runs, sum of run lengths.
 \item \file{problem-16-vitamins.cpp}: \textbf{Vitamins}. Cheapest juice per vitamin set, combinations.
@@ -1107,7 +1197,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-1-kefa-and-park.cpp}: \textbf{Kefa and Park}. Recursive tree DFS tracking consecutive-cat streak, counting valid leaves.
 \item \file{problem-2-graph-without-long-directed-path.cpp}: \textbf{Graph Without Long Directed Path}. Recursive DFS 2-colouring; orient each edge by its endpoint's colour.
 \item \file{problem-3-path-queries.cpp}: \textbf{Path Queries}. Offline queries sorted by weight; DSU size-based pair counting.
-\item \file{problem-4-beautiful-graph.cpp}: \textbf{Beautiful Graph}. Recursive DFS bipartite check per component; product of 2\textasciicircum{}c0+2\textasciicircum{}c1.
+\item \file{problem-4-beautiful-graph.cpp}: \textbf{Beautiful Graph}. Recursive DFS bipartite check per component; product of $2^{c_0}+2^{c_1}$.
 \item \file{problem-5-carousel.cpp}: \textbf{Carousel}. Cycle of differing neighbours; DFS colouring with 1/2, conflicts use 3.
 \item \file{problem-6-cyclic-components.cpp}: \textbf{Cyclic Components}. Recursive DFS components; counts those where every degree is 2.
 \item \file{problem-7-number-of-simple-paths.cpp}: \textbf{Number of Simple Paths}. DFS finds the unique cycle; hanging-tree sizes; complementary counting.
@@ -1138,14 +1228,14 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-32-protect-sheep.cpp}: \textbf{Protect Sheep}. Grid scan: dog next to every sheep, fail on adjacent wolf.
 \item \file{problem-33-proving-equivalences.cpp}: \textbf{Proving Equivalences}. Template Kosaraju SCC; max of zero in/out-degree counts.
 \item \file{problem-34-queen.cpp}: \textbf{Queen}. Children lists; per-node child flag check.
-\item \file{problem-35-journey.cpp}: \textbf{Journey}. Recursive tree DFS for expected depth.
+\item \file{problem-35-journey.cpp}: \textbf{Journey}. Recursive DFS: expected length of the random journey to a leaf.
 \item \file{problem-36-sum-in-the-tree.cpp}: \textbf{Sum in the Tree}. DFS filling unknown sums with min over children.
-\item \file{problem-37-badge.cpp}: \textbf{Badge}. Functional graph simulated from every start, O(n\textasciicircum{}2).
+\item \file{problem-37-badge.cpp}: \textbf{Badge}. Functional graph simulated from every start, $O(n^2)$.
 \item \file{problem-38-cooperative-game.cpp}: \textbf{Cooperative Game}. Interactive two-speed pointer meeting (Floyd style).
 \item \file{problem-39-counting-rooms.cpp}: \textbf{Counting Rooms}. Grid flood fill with BFS, counting components.
 \item \file{problem-40-planet-cycles.cpp}: \textbf{Planet Cycles}. Functional graph: cycle detection plus reverse-edge depths.
 \item \file{problem-41-tree-diameter.cpp}: \textbf{Tree Diameter}. Two DFS passes: heights, then best two child heights.
-\item \file{problem-42-it-restaurants.cpp}: \textbf{IT Restaurants}. Recursive DFS: (deg, n-deg-1) pairs deduped with a map.
+\item \file{problem-42-it-restaurants.cpp}: \textbf{IT Restaurants}. Subtree sizes, then a bitset subset sum of the parts around each vertex.
 \item \file{problem-43-anjis-binary-tree.cpp}: \textbf{Anji's Binary Tree}. DFS on a binary tree counting direction changes to a leaf.
 \item \file{problem-44-vertical-paths.cpp}: \textbf{Vertical Paths}. Post-order DFS splitting the tree into leaf-ended paths.
 \item \file{problem-45-send-the-fool-further-easy.cpp}: \textbf{Send the Fool Further (easy)}. DFS for max weighted root-to-leaf distance.
@@ -1161,7 +1251,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-57-path-queries.cpp}: \textbf{Path Queries}. Euler tour with +val/-val plus Fenwick prefix sums.
 \item \file{problem-58-sloth-naptime.cpp}: \textbf{Sloth Naptime}. Binary lifting LCA plus k-th ancestor jumps.
 \item \file{problem-59-static-range-minimum-queries.cpp}: \textbf{Static Range Minimum Queries}. Sparse table RMQ, O(1) query (not a graph).
-\item \file{problem-60-dzy-loves-chemistry.cpp}: \textbf{DZY Loves Chemistry}. DFS component count; 2\textasciicircum{}(n-components).
+\item \file{problem-60-dzy-loves-chemistry.cpp}: \textbf{DZY Loves Chemistry}. DFS component count $c$; answer $2^{n-c}$.
 \item \file{problem-61-graph-composition.cpp}: \textbf{Graph Composition}. Two DSUs with union by size.
 \item \file{problem-62-social-network.cpp}: \textbf{Social Network}. DSU by size; sum of the largest components.
 \item \file{problem-63-split-into-two-sets.cpp}: \textbf{Split Into Two Sets}. Degree/self-loop check, then DFS bipartite check.
@@ -1187,14 +1277,14 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-12-remainders-game.cpp}: \textbf{Remainders Game}. Running gcd(k, lcm(curr, c\_i)) == k.
 \item \file{problem-13-digits.cpp}: \textbf{Digits}. Case analysis on n and d divisibility (1, 3, 5, 7, 9).
 \item \file{problem-14-collatz-conjecture.cpp}: \textbf{Collatz Conjecture}. Jump to the next multiple of y, then k mod (y-1).
-\item \file{problem-15-insane-problem.cpp}: \textbf{Insane Problem}. Enumerate powers k\textasciicircum{}n, intersect the x range per power.
+\item \file{problem-15-insane-problem.cpp}: \textbf{Insane Problem}. Enumerate powers $k^n$, intersect the x range per power.
 \item \file{problem-16-number-game.cpp}: \textbf{Number Game}. Game-theory case split: odd, power of two, n/2 prime.
 \item \file{problem-17-maximum-multiple-sum.cpp}: \textbf{Maximum Multiple Sum}. Brute force over x, sum of multiples up to n.
 \item \file{problem-18-fireworks.cpp}: \textbf{Fireworks}. Closed form m/a + m/b + 2.
 \item \file{problem-19-di-visible-confusion.cpp}: \textbf{Di-visible Confusion}. For each a\_i, find some j in [2, i+1] that does not divide it.
 \item \file{problem-20-gcd-sequence.cpp}: \textbf{GCD Sequence}. Adjacent-gcd array; try deleting one of three candidates.
 \item \file{problem-21-polycarp-and-div-3.cpp}: \textbf{Polycarp and Div 3}. DP on prefix digit sum mod 3, last index per residue.
-\item \file{problem-22-coprime-subsequences.cpp}: \textbf{Coprime Subsequences}. Count multiples, 2\textasciicircum{}c-1, inclusion-exclusion from the top down.
+\item \file{problem-22-coprime-subsequences.cpp}: \textbf{Coprime Subsequences}. Count multiples, $2^c - 1$, inclusion-exclusion from the top down.
 \item \file{problem-23-two-divisors.cpp}: \textbf{Two Divisors}. Smallest-prime-factor sieve; first prime against the rest.
 \item \file{problem-24-congruence-equation.cpp}: \textbf{Congruence Equation}. Loop over the period p-1 with a modular inverse, count periods.
 \item \file{problem-25-design-tutorial-learn-from-math.cpp}: \textbf{Design Tutorial: Learn from Math}. Sieve; move the n/2 split outward until both are composite.
@@ -1208,10 +1298,10 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-33-nearly-shortest-repeating-substring.cpp}: \textbf{Nearly Shortest Repeating Substring}. Each divisor length, mismatches against the prefix and suffix block.
 \item \file{problem-34-rectangles.cpp}: \textbf{Rectangles}. Per row and column, count 0s and 1s, sum subsets, minus n*m.
 \item \file{problem-35-archers.cpp}: \textbf{Archers}. Geometric series p1 / (1 - (1-p1)(1-p2)).
-\item \file{problem-36-monotonic-renumeration.cpp}: \textbf{Monotonic Renumeration}. Merge overlapping first/last spans, answer 2\textasciicircum{}(segments-1).
+\item \file{problem-36-monotonic-renumeration.cpp}: \textbf{Monotonic Renumeration}. Merge overlapping first/last spans; answer $2^{s-1}$ for $s$ segments.
 \item \file{problem-37-wet-shark-and-flowers.cpp}: \textbf{Wet Shark and Flowers}. Per neighbour pair, probability of a multiple of p, times 2000.
 \item \file{problem-38-ilya-and-escalator.cpp}: \textbf{Ilya and Escalator}. Probability DP over people and seconds.
-\item \file{problem-39-little-pony-and-the-expected-maximum.cpp}: \textbf{Little Pony and the Expected Maximum}. E[max] = sum of i((i/m)\textasciicircum{}n - ((i-1)/m)\textasciicircum{}n).
+\item \file{problem-39-little-pony-and-the-expected-maximum.cpp}: \textbf{Little Pony and the Expected Maximum}. $E[\max] = \sum_i i\left((i/m)^n - ((i-1)/m)^n\right)$.
 \item \file{problem-41-makes-and-the-product.cpp}: \textbf{Makes and the Product}. Sort; case analysis on run lengths of the smallest values.
 \item \file{problem-41-makes-and-the-product-2.cpp}: \textbf{Makes and the Product (second version)}. Sort; counts of the three smallest, combinatorial cases.
 \item \file{problem-42-parking-lot.cpp}: \textbf{Parking Lot}. Closed-form counting with powers of 4.
@@ -1232,7 +1322,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-6-data-structures-fan.cpp}: \textbf{Data Structures Fan}. Prefix XOR; a range flip XORs both group totals.
 \item \file{problem-7-sheikh-easy-version.cpp}: \textbf{Sheikh (Easy Version)}. Binary search on length, prefix sum minus prefix XOR.
 \item \file{problem-8-bitwise-balancing.cpp}: \textbf{Bitwise Balancing}. Closed form a = (d\textbar{}b) - (d\&c), then verify.
-\item \file{problem-16-neko-performs-cat-furrier-transformation.cpp}: \textbf{Neko Performs Cat Furrier Transformation}. Alternate XOR with 2\textasciicircum{}n-1 and +1 until all ones.
+\item \file{problem-16-neko-performs-cat-furrier-transformation.cpp}: \textbf{Neko Performs Cat Furrier Transformation}. Alternate XOR with $2^k - 1$ and +1 until all bits are ones.
 \end{itemize}
 \subsection*{\texttt{practice/prefix-sums/} (13 files)}
 \addcontentsline{toc}{subsection}{\texttt{practice/prefix-sums/}}
@@ -1242,7 +1332,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-c-balanced-tunnel.cpp}: \textbf{Balanced Tunnel}. Map entry order to exit order, count overtakes.
 \item \file{problem-d-karen-and-coffee.cpp}: \textbf{Karen and Coffee}. Difference array, threshold k, prefix count.
 \item \file{problem-e-greg-and-array.cpp}: \textbf{Greg and Array}. Two nested difference arrays (operation counts, then values).
-\item \file{problem-f-star-sky.cpp}: \textbf{Star Sky}. Per-coordinate sums and counts.
+\item \file{problem-f-star-sky.cpp}: \textbf{Star Sky}. 2D prefix sums per starting brightness; a star shines $(s + t) \bmod (c+1)$.
 \item \file{problem-g-little-girl-and-maximum-sum.cpp}: \textbf{Little Girl and Maximum Sum}. Difference-array frequencies, sort both, pair greedily.
 \item \file{problem-h-approximating-a-constant-range.cpp}: \textbf{Approximating a Constant Range}. Sliding window with an ordered map (max - min at most 1).
 \item \file{problem-i-good-subarrays.cpp}: \textbf{Good Subarrays}. Prefix sum of (digit - 1), count equal prefixes in a map.
@@ -1307,8 +1397,8 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-43-olympiad-date.cpp}: \textbf{Olympiad Date}. Multiset of required digits (0,1,2,3,5) via map countdown.
 \item \file{problem-44-cloudberry-jam.cpp}: \textbf{Cloudberry Jam}. Closed form via double arithmetic (N*3/0.75/2).
 \item \file{problem-45-min-gcd.cpp}: \textbf{Min GCD}. GCD of multiples of min (excluding min) equals min.
-\item \file{problem-46.cpp}: \textbf{unnamed (problem-46)}. Interval intersection of feasible x; fixed sum consistency check.
-\item \file{problem-47.cpp}: \textbf{unnamed (problem-47)}. Prefix/suffix greedy subsequence matching, try inserting one value.
+\item \file{problem-46.cpp}: \textbf{(no problem name in the file)}. Interval intersection of feasible x; fixed sum consistency check.
+\item \file{problem-47.cpp}: \textbf{(no problem name in the file)}. Prefix/suffix greedy subsequence matching, try inserting one value.
 \item \file{problem-48-simple-palindrome.cpp}: \textbf{Simple Palindrome}. Distribute N evenly over 5 vowels, print grouped.
 \item \file{problem-49-distinct-character-queries.cpp}: \textbf{Distinct Character Queries}. Per-char ordered sets of positions; lower\_bound per query.
 \item \file{problem-50-thor.cpp}: \textbf{Thor}. Notification log with per-app cursor and global read pointer.
@@ -1326,7 +1416,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-61-mystic-permutation.cpp}: \textbf{Mystic Permutation}. Identity perm; swap with neighbour on fixed-point collision.
 \item \file{problem-62-to-zero.cpp}: \textbf{To Zero}. Parity math: one odd step then ceil by even K.
 \item \file{problem-63-xor-and-triangle.cpp}: \textbf{XOR and Triangle}. Brute-force y over two-bit masks; triangle inequality.
-\item \file{problem-64-lol-lovers.cpp}: \textbf{LOL Lovers}. Prefix counts vs suffix counts (suffix recomputed each i).
+\item \file{problem-64-lol-lovers.cpp}: \textbf{LOL Lovers}. Prefix counts against suffix counts (suffix recounted for each $i$).
 \item \file{problem-65-waste-sorting.cpp}: \textbf{Waste Sorting}. Greedy capacity subtraction for typed/mixed items.
 \item \file{problem-66-competitive-programmer.cpp}: \textbf{Competitive Programmer}. Divisibility by 60 via digit sum, zero, even count.
 \item \file{problem-67-william-the-vigilant.cpp}: \textbf{William the Vigilant}. Maintain "abc" count; local recount around updated index.
@@ -1343,7 +1433,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-78-kirei-attacks-the-estate.cpp}: \textbf{Kirei Attacks the Estate}. Tree DFS with alternating-sum max (pos/neg carry).
 \item \file{problem-79-come-a-little-closer.cpp}: \textbf{Come a Little Closer}. Bounding box; try removing each extreme point.
 \item \file{problem-80-cs-academy-consecutive-subsequence.cpp}: \textbf{Consecutive Subsequence (CS Academy)}. Value-indexed DP with one-skip state.
-\item \file{problem-81-cs-academy-divisor-clique.cpp}: \textbf{Divisor Clique (CS Academy)}. Sort; O(N\textasciicircum{}2) longest divisibility-chain DP.
+\item \file{problem-81-cs-academy-divisor-clique.cpp}: \textbf{Divisor Clique (CS Academy)}. Sort; $O(N^2)$ longest divisibility-chain DP.
 \item \file{problem-82-max-even-subarray.cpp}: \textbf{Max Even Subarray}. Prefix sums; min prefix per index parity.
 \item \file{problem-83-recursive-string.cpp}: \textbf{Recursive String}. Tribonacci lengths; recursive K-th character descent.
 \item \file{problem-84-display-the-number.cpp}: \textbf{Display the Number}. Greedy: leading 7 if odd, then 1s.
@@ -1351,7 +1441,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-86-username.cpp}: \textbf{Username}. String parse: strip trailing digits after last letter.
 \item \file{problem-87-build-the-permutation.cpp}: \textbf{Build the Permutation}. Constructive peaks/valleys from set extremes.
 \item \file{problem-88-interview.cpp}: \textbf{Interview}. Interactive binary search with prefix sums, flushed queries.
-\item \file{problem-89.cpp}: \textbf{unnamed (problem-89)}. Map value to first/last index; greedy interval union.
+\item \file{problem-89.cpp}: \textbf{(no problem name in the file)}. Map value to first/last index; greedy interval union.
 \item \file{problem-90-flower-boy.cpp}: \textbf{Flower Boy}. Prefix/suffix greedy matching; try inserting each b[i].
 \item \file{problem-91-tenzing-and-balls.cpp}: \textbf{Tenzing and Balls}. DP with per-value best bucket.
 \item \file{problem-93-cs-academy-to-front-to-back.cpp}: \textbf{To Front to Back (CS Academy)}. Longest consecutive-value increasing-position run; output moves.
@@ -1360,17 +1450,17 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-96-above-the-clouds.cpp}: \textbf{Above the Clouds}. Detect repeated middle char.
 \item \file{problem-97-those-who-are-with-us.cpp}: \textbf{Those Who Are With Us}. Check if one row+column covers all max cells.
 \item \file{problem-98-cs-academy-bst-fixed-height.cpp}: \textbf{BST Fixed Height (CS Academy)}. DP over count and height bound; difference of bounds.
-\item \file{problem-99.cpp}: \textbf{unnamed (problem-99)}. Brute force 1..100 for a strictly closer point.
+\item \file{problem-99.cpp}: \textbf{(no problem name in the file)}. Brute force 1..100 for a strictly closer point.
 \item \file{problem-100-mex-and-array.cpp}: \textbf{MEX and Array}. Contribution counting: subarrays containing i.
 \item \file{problem-101-paranoid-string.cpp}: \textbf{Paranoid String}. Count substrings ending at i by adjacent-difference rule.
 \item \file{problem-102-limited-swaps-cs-academy.cpp}: \textbf{Limited Swaps (CS Academy)}. Segment tree (max+count, k-th) greedy lexicographic extraction.
-\item \file{problem-102.cpp}: \textbf{unnamed (problem-102)}. Brute-force triangle counting via adjacency list + set of sets.
-\item \file{problem-103.cpp}: \textbf{unnamed (problem-103)}. At-most-K-transactions stock DP; unlimited case if K\textgreater{}=N/2.
+\item \file{problem-102.cpp}: \textbf{(no problem name in the file)}. Brute-force triangle counting via adjacency list + set of sets.
+\item \file{problem-103.cpp}: \textbf{(no problem name in the file)}. At-most-K-transactions stock DP; unlimited case if K\textgreater{}=N/2.
 \end{itemize}
 \subsection*{\texttt{practice/cs-academy/} (8 files)}
 \addcontentsline{toc}{subsection}{\texttt{practice/cs-academy/}}
 \begin{itemize}[nosep,leftmargin=1em]
-\item \file{problem-1-.cpp}: \textbf{unnamed (cs-academy problem-1)}. Sliding-window max on differences (monotonic stack).
+\item \file{problem-1-.cpp}: \textbf{(no problem name in the file)}. Sliding-window max on differences (monotonic stack).
 \item \file{problem-2-adjacent-vowels.cpp}: \textbf{Adjacent Vowels}. Count adjacent vowel pairs.
 \item \file{problem-3-fill-the-glasses.cpp}: \textbf{Fill the Glasses}. Sort, sum K smallest, ceil divide by 100.
 \item \file{problem-4-donkey-paradox.cpp}: \textbf{Donkey Paradox}. Brute force grid cells with equal Manhattan distances.
@@ -1409,7 +1499,7 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-c-later-trip-shopping.cpp}: \textbf{Round 1041 C}. Sort intervals, sum lengths, add twice the min gap.
 \item \file{problem-d-root-was-built-by-love-,-broken-by-destiny.cpp}: \textbf{Root was Built by Love, Broken by Destiny}. Caterpillar check, 2 or 4 times a product of factorials.
 \item \file{problem-a.cpp}: \textbf{Round 1043 A}. String prepend and append simulation.
-\item \file{problem-b.cpp}: \textbf{Round 1043 B}. Divisors of n of the form 10\textasciicircum{}k + 1.
+\item \file{problem-b.cpp}: \textbf{Round 1043 B}. Divisors of n of the form $10^k + 1$.
 \item \file{problem-c.cpp}: \textbf{Round 1043 C}. Bounding-box centre, max Chebyshev distance.
 \item \file{problem-d.cpp}: \textbf{Round 1043 D}. Base-3 digits, greedy splitting to spend k.
 \item \file{problem-a.cpp}: \textbf{Round 1065 A}. Brute-force count of even splits.
@@ -1425,13 +1515,13 @@ are listed for completeness and are not Salman's work.
 \begin{itemize}[nosep,leftmargin=1em]
 \item \file{problem-a.cpp}: \textbf{ABC 396 A}. Scan for three equal consecutive values.
 \item \file{problem-b.cpp}: \textbf{ABC 396 B}. Stack simulation.
-\item \file{problem-c.cpp}: \textbf{ABC 396 C}. Sort both lists, greedy prefix sums.
-\item \file{problem-a.cpp}: \textbf{ARC 194 A}. Greedy stack push and pop by sign.
+\item \file{problem-c.cpp}: \textbf{ABC 396 C}. Sort descending, prefix sums; best white count $k$ paired with at least $k$ black balls.
+\item \file{problem-a.cpp}: \textbf{ARC 194 A}. DP: $d_i = \max(d_{i-1} + a_i,\ d_{i-2})$, since dropped steps form even blocks.
 \item \file{problem-b.cpp}: \textbf{ARC 194 B}. Sum of \textbar{}p\_i - i\textbar{}.
 \item \file{problem-2.cpp}: \textbf{ABC 398 B}. Frequency map, full-house check.
 \item \file{problem-1.cpp}: \textbf{ARC 195 A}. Earliest against latest subsequence match.
 \item \file{problem-2.cpp}: \textbf{ARC 195 B}. Pairwise frequency-sum map against the max element.
-\item \file{problem-6.cpp}: \textbf{ABC 399 F}. Prefix sums plus binomial expansion of (P\_r - P\_l)\textasciicircum{}k.
+\item \file{problem-6.cpp}: \textbf{ABC 399 F}. Prefix sums plus binomial expansion of $(P_r - P_l)^k$.
 \item \file{problem-6-2.cpp}: \textbf{ABC 399 F (second version)}. The same method, heavily commented.
 \item \file{problem-6-3.cpp}: \textbf{ABC 399 F (third version)}. The same method, binomials from Pascal's triangle.
 \end{itemize}
@@ -1441,9 +1531,9 @@ are listed for completeness and are not Salman's work.
 \item \file{problem-b-rakhshs-revival.cpp}: \textbf{Rakhsh's Revival}. Greedy scan of zero runs of length m.
 \item \file{problem-c-ternary-string.cpp}: \textbf{Ternary String}. Last positions of 1, 2, 3, minimum window.
 \item \file{problem-a-1d-array.cpp}: \textbf{1D Array}. Greedy: jump k from each next B.
-\item \file{problem-a-and-there-were-k.cpp}: \textbf{And Then There Were K}. 2\textasciicircum{}floor(log2 n) - 1.
+\item \file{problem-a-and-there-were-k.cpp}: \textbf{And Then There Were K}. $2^{\lfloor \log_2 n \rfloor} - 1$.
 \item \file{problem-b-and-reconstruction.cpp}: \textbf{AND Reconstruction}. B[i] = a[i-1] \textbar{} a[i], then verify.
-\item \file{problem-c-shohag-loves-xor-easy-version.cpp}: \textbf{Shohag Loves XOR (Easy)}. Brute force y = 1..k with a divisibility check.
+\item \file{problem-c-shohag-loves-xor-easy-version.cpp}: \textbf{Shohag Loves XOR (Easy)}. Brute force over $y \le \min(m, 2x)$ with a divisibility check.
 \item \file{problem-c.cpp}: \textbf{Lecture Sleep}. Two prefix sums, window of length k.
 \item \file{problem-a.cpp}: \textbf{Contest 11 A}. Multinomial n! / prod(cnt!) mod p.
 \end{itemize}
@@ -1452,11 +1542,11 @@ are listed for completeness and are not Salman's work.
 \begin{itemize}[nosep,leftmargin=1em]
 \item \file{problem-b-ab-flipping.cpp}: \textbf{AB Flipping}. First A, last B, difference.
 \item \file{problem-d-longest-strike.cpp}: \textbf{Longest Strike}. Sort, values with frequency at least k, longest run.
-\item \file{problem-e-sakurakos-field-trip.cpp}: \textbf{Sakurako's Field Trip}. Mirror swaps when neighbours are equal, count duplicates.
+\item \file{problem-e-sakurakos-field-trip.cpp}: \textbf{Sakurako's Field Trip}. Swap each mirrored pair when a neighbour matches, then count duplicates.
 \item \file{problem-a-xorwice.cpp}: \textbf{XORwice}. Print a xor b.
 \item \file{problem-b-roof-construction.cpp}: \textbf{Roof Construction}. Place 0 at the highest power of two up to n-1.
-\item \file{problem-d-and-an-infinite-sequence.cpp}: \textbf{...And an Infinite Sequence}. Bitwise construction over l = n-m, r = n+m.
-\item \file{problem-e-vlad-and-division.cpp}: \textbf{Vlad and Division}. Pair x with its complement 2\textasciicircum{}31 - 1 - x via a map.
+\item \file{problem-d-and-an-infinite-sequence.cpp}: \textbf{...And an Infinite Sequence}. OR of every value in $[n-m, n+m]$, bit by bit.
+\item \file{problem-e-vlad-and-division.cpp}: \textbf{Vlad and Division}. Pair x with its complement $2^{31} - 1 - x$ via a map.
 \end{itemize}
 \subsection*{\texttt{course-cs334/problem-sets/} (8 files)}
 \addcontentsline{toc}{subsection}{\texttt{course-cs334/problem-sets/}}
